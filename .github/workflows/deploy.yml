@@ -52,16 +52,34 @@ jobs:
       - name: Read CloudFormation outputs
         id: get_outputs
         run: |
+          REGION="${{ secrets.AWS_REGION }}"
+
           BUCKET_NAME=$(aws cloudformation describe-stacks \
             --stack-name FullstackLearningStack \
+            --region "$REGION" \
             --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
             --output text)
 
+          # Fallback: construct the deterministic bucket name if CF lookup is empty
+          if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" = "None" ]; then
+            ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+            BUCKET_NAME="fullstack-learning-app-${ACCOUNT_ID}-${REGION}"
+            echo "⚠️ CloudFormation output empty — using derived bucket name: $BUCKET_NAME"
+          fi
+
           WEBSITE_URL=$(aws cloudformation describe-stacks \
             --stack-name FullstackLearningStack \
+            --region "$REGION" \
             --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" \
             --output text)
 
+          # Fail loudly if bucket name is still empty after the fallback
+          if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" = "None" ]; then
+            echo "❌ Could not determine bucket name. Check that the CDK stack deployed successfully."
+            exit 1
+          fi
+
+          echo "✅ Bucket: $BUCKET_NAME"
           echo "bucket_name=$BUCKET_NAME" >> "$GITHUB_OUTPUT"
           echo "website_url=$WEBSITE_URL"  >> "$GITHUB_OUTPUT"
 
