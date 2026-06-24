@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FullStack Learning Path</title>
+<style>
+  :root {
+    --bg:#0f1117; --surface:#1a1d27; --surface2:#242736; --border:#2e3347;
+    --accent:#6c63ff; --accent2:#ff6584; --green:#22c55e; --yellow:#f59e0b;
+    --blue:#3b82f6; --text:#e2e8f0; --text-muted:#8892a4; --radius:10px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;display:flex;height:100vh;overflow:hidden;}
+
+  /* SIDEBAR */
+  #sidebar{width:280px;min-width:280px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:width .25s,min-width .25s;overflow:hidden;}
+  #sidebar.collapsed{width:0;min-width:0;}
+  #sidebar-header{padding:16px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;cursor:pointer;}
+  #sidebar-header h1{font-size:1rem;color:var(--accent);flex:1;}
+  #sidebar-header p{font-size:.7rem;color:var(--text-muted);}
+  #progress-wrap{padding:10px 16px;border-bottom:1px solid var(--border);}
+  #progress-label{font-size:.7rem;color:var(--text-muted);margin-bottom:5px;display:flex;justify-content:space-between;}
+  #progress-bar{height:5px;background:var(--surface2);border-radius:99px;overflow:hidden;}
+  #progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .4s;}
+  #search-wrap{padding:8px 12px;border-bottom:1px solid var(--border);}
+  #search-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:.8rem;outline:none;}
+  #search-input:focus{border-color:var(--accent);}
+  #phase-list{flex:1;overflow-y:auto;padding:6px 0;}
+  .phase-group{margin-bottom:2px;}
+  .phase-btn{width:100%;text-align:left;background:none;border:none;color:var(--text-muted);padding:7px 14px;cursor:pointer;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;display:flex;justify-content:space-between;align-items:center;transition:color .2s;}
+  .phase-btn:hover{color:var(--text);}
+  .phase-btn .chevron{transition:transform .2s;}
+  .phase-btn.open .chevron{transform:rotate(90deg);}
+  .topic-list{display:none;}
+  .topic-list.open{display:block;}
+  .topic-btn{width:100%;text-align:left;background:none;border:none;color:var(--text-muted);padding:6px 14px 6px 26px;cursor:pointer;font-size:.81rem;display:flex;align-items:center;gap:7px;transition:all .15s;border-right:2px solid transparent;}
+  .topic-btn:hover{color:var(--text);background:var(--surface2);}
+  .topic-btn.active{color:var(--accent);background:rgba(108,99,255,.1);border-right-color:var(--accent);}
+  .check{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;}
+  .check.filled{background:var(--green);border-color:var(--green);color:#fff;}
+
+  /* MAIN */
+  #main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+  #topbar{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface);flex-shrink:0;}
+  #toggle-btn{background:none;border:1px solid var(--border);color:var(--text-muted);padding:5px 9px;border-radius:6px;cursor:pointer;font-size:.9rem;transition:all .15s;flex-shrink:0;}
+  #toggle-btn:hover{border-color:var(--accent);color:var(--accent);}
+  #topbar h2{font-size:.95rem;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tag{font-size:.68rem;padding:2px 9px;border-radius:99px;font-weight:600;white-space:nowrap;}
+  .tag-phase{background:rgba(108,99,255,.2);color:var(--accent);}
+  .nav-btns{display:flex;gap:6px;flex-shrink:0;}
+  .nav-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.75rem;transition:all .15s;}
+  .nav-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+  .nav-btn:disabled{opacity:.3;cursor:default;}
+  .btn-mark{background:var(--accent);color:#fff;border:none;padding:6px 14px;border-radius:var(--radius);cursor:pointer;font-size:.78rem;font-weight:600;transition:opacity .2s;flex-shrink:0;}
+  .btn-mark:hover{opacity:.85;}
+  .btn-mark.done{background:var(--green);}
+
+  #content{flex:1;overflow-y:auto;padding:20px;}
+
+  /* TABS */
+  .tabs{display:flex;gap:2px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:0;flex-wrap:wrap;}
+  .tab-btn{background:none;border:none;color:var(--text-muted);padding:7px 14px;cursor:pointer;font-size:.81rem;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;white-space:nowrap;}
+  .tab-btn:hover{color:var(--text);}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* CARDS */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+  .card h3{font-size:.88rem;margin-bottom:9px;color:var(--text);}
+  .card p,.card li{font-size:.82rem;color:var(--text-muted);line-height:1.65;}
+  .card ul,.card ol{padding-left:16px;}
+  .card li{margin-bottom:4px;}
+  .card code{background:var(--surface2);padding:2px 5px;border-radius:4px;font-family:'Consolas',monospace;font-size:.78rem;color:#a78bfa;}
+
+  /* CODE BLOCK */
+  .code-block{background:#0d1117;border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin:10px 0;overflow-x:auto;position:relative;}
+  .code-block pre{font-family:'Consolas','Monaco',monospace;font-size:.78rem;line-height:1.6;color:#e2e8f0;}
+  .code-lang{position:absolute;top:7px;right:10px;font-size:.62rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+
+  /* PROJECTS */
+  .project-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;transition:border-color .2s;}
+  .project-card:hover{border-color:var(--accent);}
+  .project-card h4{font-size:.87rem;margin-bottom:5px;}
+  .project-card p{font-size:.79rem;color:var(--text-muted);line-height:1.55;}
+  .difficulty{display:inline-block;font-size:.66rem;padding:2px 7px;border-radius:99px;font-weight:700;margin-right:5px;}
+  .beginner{background:rgba(34,197,94,.15);color:var(--green);}
+  .intermediate{background:rgba(245,158,11,.15);color:var(--yellow);}
+  .advanced{background:rgba(239,68,68,.15);color:#ef4444;}
+  .tech-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;}
+  .tech-tag{font-size:.66rem;padding:2px 7px;background:var(--surface2);border-radius:99px;color:var(--text-muted);}
+
+  /* Q&A */
+  .qa-item{border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;}
+  .qa-q{padding:11px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;background:var(--surface);transition:background .15s;gap:10px;}
+  .qa-q:hover{background:var(--surface2);}
+  .qa-q span{font-size:.82rem;font-weight:600;line-height:1.4;}
+  .qa-q .arr{color:var(--accent);flex-shrink:0;transition:transform .2s;font-size:.85rem;margin-top:2px;}
+  .qa-q.open .arr{transform:rotate(90deg);}
+  .qa-a{display:none;padding:12px 14px;background:var(--surface2);border-top:1px solid var(--border);}
+  .qa-a p,.qa-a li{font-size:.8rem;color:var(--text-muted);line-height:1.65;}
+  .qa-a ul{padding-left:14px;}
+  .qa-a li{margin-bottom:3px;}
+
+  /* BEST PRACTICES */
+  .practice-item{display:flex;gap:10px;padding:11px;background:var(--surface2);border-radius:var(--radius);margin-bottom:7px;}
+  .practice-icon{font-size:1rem;flex-shrink:0;margin-top:1px;}
+  .practice-text h4{font-size:.82rem;font-weight:600;margin-bottom:2px;}
+  .practice-text p{font-size:.77rem;color:var(--text-muted);line-height:1.55;}
+
+  /* NOTES */
+  #notes-area{width:100%;min-height:180px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;color:var(--text);font-size:.83rem;line-height:1.6;resize:vertical;outline:none;font-family:inherit;}
+  #notes-area:focus{border-color:var(--accent);}
+  #notes-save-msg{font-size:.72rem;color:var(--green);margin-top:6px;height:16px;transition:opacity .3s;}
+
+  /* QUIZ */
+  .quiz-q{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;}
+  .quiz-q p{font-size:.84rem;font-weight:600;margin-bottom:10px;line-height:1.4;}
+  .quiz-opts{display:flex;flex-direction:column;gap:6px;}
+  .quiz-opt{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;cursor:pointer;font-size:.81rem;color:var(--text-muted);text-align:left;transition:all .15s;}
+  .quiz-opt:hover:not(.locked){border-color:var(--accent);color:var(--text);}
+  .quiz-opt.correct{background:rgba(34,197,94,.15);border-color:var(--green);color:var(--green);}
+  .quiz-opt.wrong{background:rgba(239,68,68,.1);border-color:#ef4444;color:#ef4444;}
+  .quiz-opt.locked{cursor:default;}
+  .quiz-result{margin-top:16px;padding:14px;background:var(--surface2);border-radius:var(--radius);text-align:center;}
+  .quiz-result p{font-size:.88rem;font-weight:600;}
+  .quiz-result span{font-size:1.3rem;}
+  .btn-retake{background:var(--accent);color:#fff;border:none;padding:7px 18px;border-radius:var(--radius);cursor:pointer;font-size:.8rem;font-weight:600;margin-top:10px;}
+
+  /* HOME */
+  .hero{background:linear-gradient(135deg,rgba(108,99,255,.15),rgba(255,101,132,.1));border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:20px;}
+  .hero h2{font-size:1.4rem;margin-bottom:6px;}
+  .hero p{color:var(--text-muted);font-size:.86rem;line-height:1.6;max-width:560px;}
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;}
+  .stat-num{font-size:1.5rem;font-weight:700;color:var(--accent);}
+  .stat-label{font-size:.7rem;color:var(--text-muted);margin-top:2px;}
+  .phase-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+  .phase-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:all .2s;}
+  .phase-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+  .phase-card-icon{font-size:1.3rem;margin-bottom:7px;}
+  .phase-card h3{font-size:.85rem;margin-bottom:4px;}
+  .phase-card p{font-size:.73rem;color:var(--text-muted);line-height:1.5;}
+  .phase-progress{height:3px;background:var(--surface2);border-radius:99px;margin-top:9px;overflow:hidden;}
+  .phase-progress-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .4s;}
+
+  /* SEARCH RESULTS */
+  .search-result-item{width:100%;text-align:left;background:none;border:none;color:var(--text-muted);padding:6px 14px;cursor:pointer;font-size:.8rem;display:block;transition:all .15s;}
+  .search-result-item:hover{color:var(--text);background:var(--surface2);}
+  .search-result-item span{font-size:.68rem;color:var(--accent);display:block;}
+
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--accent);}
+
+  @media(max-width:700px){
+    #sidebar{width:240px;min-width:240px;}
+    .stats-row{grid-template-columns:repeat(2,1fr);}
+    #topbar h2{font-size:.82rem;}
+  }
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+  <div id="sidebar-header" onclick="loadHome()">
+    <h1>⚡ FullStack Path</h1>
+  </div>
+  <div id="progress-wrap">
+    <div id="progress-label"><span>Progress</span><span id="progress-text">0/0</span></div>
+    <div id="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
+  </div>
+  <div id="search-wrap">
+    <input id="search-input" type="text" placeholder="Search topics..." oninput="handleSearch(this.value)">
+  </div>
+  <div id="phase-list"></div>
+</nav>
+
+<div id="main">
+  <div id="topbar">
+    <button id="toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
+    <h2 id="topic-title">FullStack Learning Path</h2>
+    <span id="topic-tag" class="tag tag-phase">Overview</span>
+    <div class="nav-btns">
+      <button class="nav-btn" id="prev-btn" onclick="navigateTopic(-1)" disabled>← Prev</button>
+      <button class="nav-btn" id="next-btn" onclick="navigateTopic(1)" disabled>Next →</button>
+    </div>
+    <button id="mark-btn" class="btn-mark" onclick="markTopic()" style="display:none">Mark Complete</button>
+  </div>
+  <div id="content">
+    <div id="home-view"></div>
+    <div id="topic-view" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+// ===================== DATA =====================
+const ROADMAP = [
+  {
+    id:"phase1", label:"Phase 1: Internet & HTML", icon:"🌐",
+    desc:"How the web works, HTTP, and semantic HTML.",
+    topics:[
+      {
+        id:"how-internet", title:"How the Internet Works",
+        overview:"The internet is a global network of interconnected computers communicating via standardized protocols (TCP/IP). When you visit a website, your browser sends an HTTP request to a DNS-resolved IP address, the server processes it and returns a response.",
+        keyConcepts:["IP Addresses & MAC Addresses","TCP/IP Protocol Suite","DNS (Domain Name System)","HTTP vs HTTPS","Client-Server Model","Request-Response Cycle","Ports & Sockets"],
+        bestPractices:[
+          {icon:"🔒",title:"Always use HTTPS",desc:"Encrypt all data in transit. Never send sensitive data over plain HTTP."},
+          {icon:"⚡",title:"Minimize DNS lookups",desc:"Reduce unique domains your page loads assets from to cut DNS overhead."},
+          {icon:"📡",title:"Use CDNs",desc:"Serve static assets from Content Delivery Networks to reduce latency globally."},
+        ],
+        projects:[
+          {title:"HTTP Inspector Tool",diff:"beginner",desc:"Build a UI that lets you enter a URL and displays the HTTP response: status code, headers, and timing.",techs:["HTML","CSS","JS"]},
+          {title:"DNS Lookup Visualizer",diff:"intermediate",desc:"Build a Node.js tool that resolves a domain and shows the full DNS chain: resolver → root → TLD → authoritative.",techs:["Node.js","dns module"]},
+        ],
+        qa:[
+          {q:"What is the difference between TCP and UDP?",a:"TCP (Transmission Control Protocol) is connection-oriented: provides guaranteed delivery, ordering, and error checking via the 3-way handshake. UDP (User Datagram Protocol) is connectionless: faster but no delivery guarantee. TCP is used for web, email; UDP for streaming, gaming, and DNS queries."},
+          {q:"What happens when you type a URL in the browser?",a:"1. Browser checks cache. 2. DNS resolution (browser → OS → resolver → root → TLD → authoritative nameserver). 3. TCP connection (3-way handshake). 4. TLS handshake (for HTTPS). 5. HTTP request sent. 6. Server processes request. 7. Response returned. 8. Browser renders HTML, then fetches CSS/JS/images."},
+          {q:"What is the difference between HTTP and HTTPS?",a:"HTTPS = HTTP + TLS/SSL encryption. HTTPS ensures: Confidentiality (data is encrypted), Integrity (data is not tampered in transit), Authentication (the certificate proves you're talking to the right server). Port 80 for HTTP, 443 for HTTPS."},
+          {q:"What are HTTP status code categories?",a:"1xx: Informational. 2xx: Success (200 OK, 201 Created, 204 No Content). 3xx: Redirection (301 Moved Permanently, 304 Not Modified). 4xx: Client errors (400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 429 Too Many Requests). 5xx: Server errors (500 Internal Server Error, 503 Service Unavailable)."},
+        ],
+        quiz:[
+          {q:"Which protocol guarantees packet delivery and ordering?",opts:["UDP","TCP","HTTP","DNS"],answer:1},
+          {q:"What port does HTTPS use by default?",opts:["80","8080","443","3000"],answer:2},
+          {q:"Which status code means 'resource not found'?",opts:["403","500","301","404"],answer:3},
+        ],
+        code:`// Demonstrating HTTP request lifecycle
+fetch('https://api.example.com/data', {
+  method: 'GET',
+  headers: {
+    'Accept': 'application/json',
+    'Authorization': 'Bearer your-token'
+  }
+})
+.then(res => {
+  console.log('Status:', res.status);   // 200, 404, 500...
+  return res.json();
+})
+.then(data => console.log('Data:', data))
+.catch(err => console.error('Network error:', err));`
+      },
+      {
+        id:"html-basics", title:"HTML Fundamentals",
+        overview:"HTML (HyperText Markup Language) is the skeleton of every webpage. Semantic HTML improves accessibility, SEO, and maintainability. Writing good HTML is the foundation of frontend development.",
+        keyConcepts:["Semantic Elements (nav, main, article, section, aside)","Forms & native validation","Tables & Lists","Media (img, video, audio)","Accessibility: ARIA roles & alt text","Meta tags & SEO","HTML5 APIs (localStorage, Canvas, Geolocation)"],
+        bestPractices:[
+          {icon:"♿",title:"Use semantic HTML",desc:"Use <header>, <nav>, <main>, <article>, <footer> instead of generic <div>. Aids screen readers and SEO."},
+          {icon:"🖼️",title:"Always add alt text",desc:"Every <img> must have a descriptive alt attribute for accessibility and SEO."},
+          {icon:"📱",title:"Mobile-first meta tag",desc:'Always include <meta name="viewport" content="width=device-width, initial-scale=1.0"> for responsive design.'},
+        ],
+        projects:[
+          {title:"Personal Portfolio Page",diff:"beginner",desc:"Build a semantic, accessible personal portfolio: about, skills, projects, and a contact form with native validation.",techs:["HTML5","CSS3"]},
+          {title:"Multi-step Form",diff:"beginner",desc:"Build a multi-step registration form with HTML5 validation, custom error messages, and ARIA accessibility.",techs:["HTML5","JS"]},
+        ],
+        qa:[
+          {q:"What is semantic HTML and why does it matter?",a:"Semantic HTML uses meaningful tags that describe the content's purpose (e.g., <nav> for navigation, <article> for standalone content). It matters for: SEO (search engines understand content better), Accessibility (screen readers navigate by landmarks), Maintainability (code is self-documenting)."},
+          {q:"What is the difference between <div> and <section>?",a:"<div> is a generic container with no semantic meaning. <section> represents a standalone section of content that would appear in a document outline. Use <section> when the content has a heading; use <div> for styling/layout purposes only."},
+          {q:"Explain the difference between GET and POST form methods.",a:"GET appends data to the URL (visible, bookmarkable, cached, limited size ~2KB). POST sends data in the request body (hidden, not cached, no size limit). Use GET for searches/filters, POST for sensitive data or large payloads."},
+          {q:"What are data attributes in HTML5?",a:"Data attributes (data-*) store custom data in HTML elements: <div data-user-id='123'>. Access via JS: element.dataset.userId. Useful for passing server-rendered data to JavaScript without polluting the DOM or using non-standard attributes."},
+        ],
+        quiz:[
+          {q:"Which element is correct for a site's primary navigation?",opts:["<div class='nav'>","<nav>","<menu>","<header>"],answer:1},
+          {q:"What attribute makes an image accessible?",opts:["title","src","alt","aria-label"],answer:2},
+          {q:"Which HTML5 element represents standalone content (e.g., a blog post)?",opts:["<section>","<div>","<article>","<aside>"],answer:2},
+        ],
+        code:`<!-- Semantic HTML5 Structure -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Page description for SEO">
+  <title>Page Title</title>
+</head>
+<body>
+  <header>
+    <nav aria-label="Main navigation">
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/about">About</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <article>
+      <h1>Main Heading</h1>
+      <section aria-labelledby="sec-title">
+        <h2 id="sec-title">Section Title</h2>
+        <p>Content here...</p>
+        <img src="photo.jpg" alt="Descriptive alt text" loading="lazy">
+      </section>
+    </article>
+    <aside>Related content</aside>
+  </main>
+  <footer>Copyright info</footer>
+</body>
+</html>`
+      },
+    ]
+  },
+  {
+    id:"phase2", label:"Phase 2: CSS & Styling", icon:"🎨",
+    desc:"Layouts, animations, and responsive design.",
+    topics:[
+      {
+        id:"css-layouts", title:"CSS Layouts: Flexbox & Grid",
+        overview:"Flexbox handles one-dimensional layouts (rows OR columns). CSS Grid handles two-dimensional layouts (rows AND columns). Master both to build any layout without hacks.",
+        keyConcepts:["Flexbox: container & item properties","CSS Grid: template areas, fr units","Responsive Design & Media Queries","CSS Variables (Custom Properties)","BEM Naming Convention","CSS Animations & Transitions","Box Model & box-sizing"],
+        bestPractices:[
+          {icon:"📐",title:"Mobile-first approach",desc:"Write base styles for mobile, then use min-width media queries to enhance for larger screens."},
+          {icon:"🎨",title:"Use CSS custom properties",desc:"Define colors, spacing, fonts as CSS variables in :root for easy theming and consistency."},
+          {icon:"🚀",title:"Prefer transform for animations",desc:"Use transform and opacity for animations — they run on the GPU and don't trigger layout reflow."},
+        ],
+        projects:[
+          {title:"Responsive Dashboard Layout",diff:"beginner",desc:"Build a responsive admin dashboard with sidebar, topbar, and card grid using CSS Grid and Flexbox.",techs:["HTML","CSS Grid","Flexbox"]},
+          {title:"CSS-only Components",diff:"intermediate",desc:"Create a pure-CSS animated loading spinner, tooltip, accordion, and dropdown menu without JavaScript.",techs:["CSS3","Animations"]},
+        ],
+        qa:[
+          {q:"When would you use Flexbox vs CSS Grid?",a:"Flexbox: 1D layouts — navbars, centering, button groups, cards in a row. Grid: 2D layouts — full page structure, magazine layouts, dashboard grids. Rule of thumb: if you're thinking rows AND columns simultaneously, use Grid. If laying things out in one direction, use Flexbox. They complement each other."},
+          {q:"What is the CSS Box Model?",a:"Every element is a rectangular box: Content → Padding → Border → Margin. By default, width/height only applies to content (box-sizing: content-box). Use box-sizing: border-box so width/height includes padding and border — much more intuitive. Apply it globally: *, *::before, *::after { box-sizing: border-box; }"},
+          {q:"What is specificity in CSS?",a:"Specificity determines which CSS rule wins when multiple rules target the same element. Hierarchy (highest to lowest): Inline styles > ID selectors (#id = 100) > Class/pseudo-class/attribute selectors (.class = 10) > Element selectors (div = 1). Use the lowest specificity that works to keep CSS maintainable."},
+          {q:"What is the difference between position: relative, absolute, fixed, sticky?",a:"relative: offset from normal position, creates stacking context. absolute: positioned relative to nearest positioned ancestor, taken out of flow. fixed: positioned relative to viewport, stays during scroll. sticky: acts relative until scroll threshold, then acts fixed — useful for sticky headers."},
+        ],
+        quiz:[
+          {q:"Which CSS property makes an element a flex container?",opts:["display: block","display: flex","flex: 1","align-items: center"],answer:1},
+          {q:"What does box-sizing: border-box do?",opts:["Removes margins","Includes padding and border in the element's total width/height","Adds a border to all elements","Sets the box shadow"],answer:1},
+          {q:"Which unit in CSS Grid represents a fraction of available space?",opts:["px","%","fr","em"],answer:2},
+        ],
+        code:`/* CSS Grid Layout */
+.dashboard {
+  display: grid;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar main";
+  grid-template-columns: 250px 1fr;
+  grid-template-rows: 60px 1fr;
+  height: 100vh;
+}
+
+/* Flexbox centering */
+.center { display: flex; align-items: center; justify-content: center; }
+
+/* CSS Variables for theming */
+:root { --primary: #6c63ff; --spacing: 16px; --radius: 8px; }
+
+/* Mobile-first responsive grid */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;         /* mobile */
+  gap: 16px;
+}
+@media (min-width: 768px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* GPU-accelerated animation */
+.card:hover { transform: translateY(-4px); transition: transform 200ms ease; }`
+      },
+    ]
+  },
+  {
+    id:"phase3", label:"Phase 3: JavaScript", icon:"💛",
+    desc:"Core JS, ES6+, async patterns, and the DOM.",
+    topics:[
+      {
+        id:"js-core", title:"JavaScript Core",
+        overview:"JavaScript is the only language that runs natively in browsers. Understanding closures, prototypes, the event loop, and async patterns is critical for both frontend and backend development.",
+        keyConcepts:["Variables: var/let/const & hoisting","Closures & Scope","Prototypal Inheritance","ES6+: Arrow functions, destructuring, spread, optional chaining","Promises & async/await","Event Loop & Call Stack","DOM Manipulation","Modules (ESM/CommonJS)"],
+        bestPractices:[
+          {icon:"🔒",title:"Prefer const, then let",desc:"Use const by default. Use let only when you need to reassign. Avoid var entirely — it has function scope and hoisting quirks."},
+          {icon:"⚡",title:"Avoid blocking the event loop",desc:"Never run long synchronous tasks on the main thread. Use async, Web Workers, or chunking with setTimeout."},
+          {icon:"🛡️",title:"Validate all user input",desc:"Never trust user input. Sanitize before rendering (prevent XSS), validate before processing, escape before storing in DB."},
+        ],
+        projects:[
+          {title:"Todo App (Vanilla JS)",diff:"beginner",desc:"Full CRUD todo app with localStorage persistence, filtering, and drag-to-reorder. No frameworks allowed.",techs:["HTML","CSS","Vanilla JS"]},
+          {title:"Weather Dashboard",diff:"intermediate",desc:"Fetch weather from an API, display current conditions and 7-day forecast. Practice async/await and error handling.",techs:["JS","Fetch API","OpenWeatherMap API"]},
+          {title:"JavaScript Quiz Engine",diff:"intermediate",desc:"Build a quiz app that loads questions from a JSON file, tracks score, shows results, and animates transitions.",techs:["JS","CSS Animations","localStorage"]},
+        ],
+        qa:[
+          {q:"Explain closures in JavaScript.",a:"A closure is a function that retains access to its outer (lexical) scope even after the outer function has returned. Example: function counter() { let count = 0; return () => ++count; }. The returned function 'closes over' count. Used for: data privacy, factory functions, event handlers with state, memoization."},
+          {q:"What is the event loop?",a:"JS is single-threaded. The event loop enables async behavior: 1. Call Stack (sync code runs here). 2. Web APIs (setTimeout, fetch, DOM events run asynchronously outside the stack). 3. Microtask Queue (resolved promises — higher priority). 4. Callback/Macro Queue (setTimeout callbacks). Event loop: when the stack is empty, drain microtask queue first, then take one macro task."},
+          {q:"What is the difference between == and ===?",a:"== (loose equality) performs type coercion: '1' == 1 is true, null == undefined is true. === (strict equality) checks value AND type: '1' === 1 is false. Always use === to avoid subtle bugs. The only acceptable use of == is null/undefined checking: x == null catches both."},
+          {q:"Explain Promises and async/await.",a:"A Promise represents a future value (pending → fulfilled/rejected). async/await is syntactic sugar over Promises. async functions always return a Promise. await pauses execution until the Promise settles. Use try/catch with async/await for error handling. Use Promise.all() for parallel operations."},
+        ],
+        quiz:[
+          {q:"Which keyword creates a block-scoped variable that cannot be reassigned?",opts:["var","let","const","function"],answer:2},
+          {q:"What does the spread operator (...) do?",opts:["Creates a rest parameter","Spreads an iterable into individual elements","Declares a generator","Assigns default values"],answer:1},
+          {q:"Which queue has higher priority in the event loop?",opts:["Macro task queue","Callback queue","Microtask queue","Render queue"],answer:2},
+        ],
+        code:`// Closures & Factory Pattern
+function createCounter(initial = 0) {
+  let count = initial;
+  return { increment: () => ++count, value: () => count };
+}
+
+// Async/Await with error handling
+async function fetchUser(id) {
+  try {
+    const res = await fetch(\`/api/users/\${id}\`);
+    if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+    return await res.json();
+  } catch (err) {
+    console.error('Failed:', err);
+    throw err;
+  }
+}
+
+// Destructuring & Spread
+const { name, age, ...rest } = user;
+const merged = { ...defaults, ...userPrefs };
+const [first, ...others] = array;
+
+// Promise.all — parallel requests
+const [user, posts] = await Promise.all([fetchUser(id), fetchPosts(id)]);
+
+// Optional chaining & nullish coalescing
+const city = user?.address?.city ?? 'Unknown';`
+      },
+    ]
+  },
+  {
+    id:"phase4", label:"Phase 4: TypeScript", icon:"🔷",
+    desc:"Add type safety to your JavaScript.",
+    topics:[
+      {
+        id:"typescript", title:"TypeScript",
+        overview:"TypeScript is JavaScript with static type annotations. It catches bugs at compile time instead of runtime, improves IDE support, and makes large codebases more maintainable. It compiles down to plain JavaScript.",
+        keyConcepts:["Type annotations & inference","Interfaces vs Type Aliases","Generics","Union & Intersection types","Enums","Type narrowing (typeof, instanceof, in)","Utility Types (Partial, Pick, Omit, Record)","tsconfig.json","TypeScript with React (tsx)"],
+        bestPractices:[
+          {icon:"🚫",title:"Avoid 'any' at all costs",desc:"Using 'any' defeats the purpose of TypeScript. Use 'unknown' when you genuinely don't know the type — it forces you to narrow it before use."},
+          {icon:"✅",title:"Enable strict mode",desc:'Set "strict": true in tsconfig.json. It enables strictNullChecks, noImplicitAny, and more — gives you the full benefit of TypeScript.'},
+          {icon:"🏗️",title:"Prefer interfaces for object shapes",desc:"Use interfaces for object shapes (they can be extended and merged). Use type aliases for unions, intersections, and mapped types."},
+        ],
+        projects:[
+          {title:"TypeScript Todo App",diff:"beginner",desc:"Rewrite a vanilla JS todo app in TypeScript. Add strict types for todos, filters, and events.",techs:["TypeScript","HTML","CSS"]},
+          {title:"Typed REST API Client",diff:"intermediate",desc:"Build a type-safe API client using TypeScript generics. Every response has a typed shape, errors are typed.",techs:["TypeScript","Fetch API","Generics"]},
+        ],
+        qa:[
+          {q:"What is the difference between interface and type in TypeScript?",a:"Both define the shape of an object. Key differences: Interfaces can be extended with 'extends' and merged (declaration merging). Type aliases can represent unions, intersections, mapped types, and primitives. In practice: use interface for object shapes (especially public APIs), type for everything else. Both are erased at compile time — no runtime cost."},
+          {q:"What are TypeScript generics?",a:"Generics let you write reusable code that works with multiple types while preserving type safety. Example: function identity<T>(arg: T): T { return arg; }. TypeScript infers T from the argument. Common uses: data fetching functions, container types (Array<T>, Promise<T>), utility functions that transform data."},
+          {q:"What is the difference between 'any' and 'unknown'?",a:"'any' opts out of type checking entirely — you can do anything with it without TypeScript complaining. 'unknown' is the type-safe alternative — you must narrow it (typeof, instanceof, type guard) before you can use it. Prefer 'unknown' over 'any' for external data (API responses, user input)."},
+          {q:"What is type narrowing?",a:"Type narrowing is how TypeScript refines a union type to a more specific type within a conditional block. Methods: typeof (for primitives), instanceof (for classes), 'in' operator (for object properties), custom type guards (function returning 'arg is Type'), discriminated unions. TypeScript understands control flow and updates the type accordingly."},
+        ],
+        quiz:[
+          {q:"Which tsconfig option enables full TypeScript strict checking?",opts:['"noAny": true','"strict": true','"checkAll": true','"fullCheck": true'],answer:1},
+          {q:"What TypeScript utility type makes all properties of a type optional?",opts:["Omit<T>","Required<T>","Partial<T>","Pick<T>"],answer:2},
+          {q:"What does the 'unknown' type require before use?",opts:["Type assertion","Type narrowing","Type casting","Type erasure"],answer:1},
+        ],
+        code:`// Interfaces & Types
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'user';  // union type
+}
+
+// Generics — reusable typed function
+async function fetchData<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(\`HTTP \${res.status}\`);
+  return res.json() as Promise<T>;
+}
+const user = await fetchData<User>('/api/users/1');
+// user.name is typed as string ✓
+
+// Utility Types
+type NewUser = Omit<User, 'id'>;           // remove id
+type UserPreview = Pick<User, 'id'|'name'>; // only id & name
+type PartialUser = Partial<User>;           // all optional
+
+// Type narrowing
+function processId(id: string | number) {
+  if (typeof id === 'string') {
+    return id.toUpperCase();  // TypeScript knows it's string here
+  }
+  return id.toFixed(2);       // TypeScript knows it's number here
+}`
+      },
+    ]
+  },
+  {
+    id:"phase5", label:"Phase 5: Version Control", icon:"🌿",
+    desc:"Git & GitHub — non-negotiable for every developer.",
+    topics:[
+      {
+        id:"git", title:"Git & GitHub",
+        overview:"Git is a distributed version control system. It tracks changes, enables collaboration, and is the foundation of all modern software development workflows. Every professional developer uses it daily.",
+        keyConcepts:["Commits, Staging, Working Tree","Branching & Merging","Rebasing","Pull Requests & Code Review","Git Flow / GitHub Flow","Cherry-pick, Stash, Reset","Resolving Merge Conflicts","GitHub Actions CI/CD basics"],
+        bestPractices:[
+          {icon:"✍️",title:"Conventional commit messages",desc:"Use: feat: add login, fix: resolve memory leak, docs: update README. Present tense, imperative mood, explains WHY not what."},
+          {icon:"🌿",title:"Branch for every feature",desc:"Never commit directly to main/master. Create feature/fix/chore branches, PR them, then merge after review."},
+          {icon:"🔍",title:"Keep commits atomic",desc:"Each commit should do exactly one thing. Small, focused commits are easier to review, revert, and cherry-pick."},
+        ],
+        projects:[
+          {title:"Open Source Contribution",diff:"beginner",desc:"Fork a beginner-friendly open source project, fix a bug or improve docs, and submit a real pull request.",techs:["Git","GitHub"]},
+          {title:"CI/CD with GitHub Actions",diff:"intermediate",desc:"Set up GitHub Actions to lint, test, and deploy on every push to main. Add status checks that block bad PRs.",techs:["Git","GitHub Actions","YAML"]},
+        ],
+        qa:[
+          {q:"What is the difference between git merge and git rebase?",a:"Merge creates a merge commit that preserves the full branch history — non-destructive, safe for shared branches. Rebase replays your commits on top of the target branch — creates a linear history but rewrites commit SHAs. Rule: never rebase public/shared branches. Use rebase to clean up local commits before merging a feature branch."},
+          {q:"How do you undo the last commit?",a:"git reset --soft HEAD~1: undo commit, keep changes staged. git reset --mixed HEAD~1: undo commit, unstage changes. git reset --hard HEAD~1: undo commit and discard changes (destructive!). For already-pushed commits: git revert HEAD — creates a new commit that undoes the changes. Always prefer revert for shared history."},
+          {q:"What is a pull request and what makes a good one?",a:"A PR is a proposal to merge code, enabling code review. A good PR: is small and focused (one concern), has a clear title/description explaining WHY, links to the related issue, includes screenshots for UI changes, has passing CI checks, and addresses all review comments before merging."},
+          {q:"What is git stash?",a:"git stash temporarily shelves uncommitted changes so you can switch context. git stash push (or just git stash), git stash pop (re-apply). Use git stash list to see all stashes. Useful when you need to switch branches but aren't ready to commit your current work."},
+        ],
+        quiz:[
+          {q:"Which command stages ALL changes for commit?",opts:["git commit -a","git add .","git push","git stage all"],answer:1},
+          {q:"Which command creates and switches to a new branch?",opts:["git branch newbranch","git switch newbranch","git checkout -b newbranch","git new newbranch"],answer:2},
+          {q:"What does 'git revert HEAD' do?",opts:["Deletes the last commit","Creates a new commit that undoes the last commit","Moves HEAD back one commit","Stages all changes"],answer:1},
+        ],
+        code:`# Essential Git Workflow
+git clone <url>
+git checkout -b feature/user-auth    # create & switch branch
+git add -p                           # stage hunks interactively
+git commit -m "feat: add JWT auth"
+git push origin feature/user-auth
+
+# Keep branch up to date
+git fetch origin
+git rebase origin/main               # clean linear history
+
+# Undo mistakes safely
+git restore <file>                   # discard unstaged changes
+git restore --staged <file>          # unstage a file
+git reset --soft HEAD~1              # undo commit, keep changes
+
+# Useful inspection
+git log --oneline --graph --all      # visual branch history
+git diff main..feature/user-auth     # compare branches
+git blame src/auth.js                # who changed what, when`
+      },
+    ]
+  },
+  {
+    id:"phase6", label:"Phase 6: React.js", icon:"⚛️",
+    desc:"Component-based UI development.",
+    topics:[
+      {
+        id:"react", title:"React.js",
+        overview:"React is a component-based library for building UIs. It uses a virtual DOM, unidirectional data flow, and hooks for state management. React is the most widely used frontend library and a core skill for any fullstack developer.",
+        keyConcepts:["JSX & Components (functional)","Props & State","Hooks: useState, useEffect, useRef, useContext","Component Lifecycle","Custom Hooks","Context API for state management","React Router v6","Performance: React.memo, useMemo, useCallback","Error Boundaries"],
+        bestPractices:[
+          {icon:"🧩",title:"One responsibility per component",desc:"Keep components small and focused. If a component does too much, split it. Aim for under 150 lines per component."},
+          {icon:"⬆️",title:"Lift state up",desc:"When multiple components need the same state, lift it to their closest common ancestor and pass down via props."},
+          {icon:"🔧",title:"Extract custom hooks",desc:"When logic repeats across components, extract it into a custom hook (e.g., useFetch, useLocalStorage). Hooks compose beautifully."},
+        ],
+        projects:[
+          {title:"E-commerce Product Page",diff:"intermediate",desc:"Product listing with filters, search, cart (Context API), and responsive grid. No UI library — build it from scratch.",techs:["React","Context API","CSS Modules"]},
+          {title:"GitHub Profile Viewer",diff:"intermediate",desc:"Search GitHub users, display repos and follower counts. Use React Router for per-user profile pages.",techs:["React","React Router","GitHub API"]},
+          {title:"Kanban Board",diff:"advanced",desc:"Drag-and-drop task board like Trello: multiple columns, persistent state, card editing, and column management.",techs:["React","React DnD","Zustand"]},
+        ],
+        qa:[
+          {q:"What is the Virtual DOM and why does React use it?",a:"The Virtual DOM is an in-memory representation of the real DOM. When state changes: 1. React creates a new VDOM tree. 2. Diffs it against the previous tree (reconciliation). 3. Calculates the minimal set of real DOM mutations. 4. Applies them in a batch. This is faster than direct DOM manipulation because real DOM operations are expensive."},
+          {q:"Explain the useEffect hook and its dependency array.",a:"useEffect runs side effects after render. The dependency array controls when it runs: [] empty — runs once after mount. [dep1, dep2] — runs when any dep changes. No array — runs after every render. Always return a cleanup function to prevent memory leaks (clear timers, cancel subscriptions, unsubscribe from events)."},
+          {q:"What is the difference between controlled and uncontrolled components?",a:"Controlled: form data managed by React state. Input value is set from state, onChange updates state. You have full control. Uncontrolled: form data managed by the DOM. You use ref to access values imperatively. Prefer controlled for forms that need validation, conditional rendering, or React-driven behavior."},
+          {q:"When would you use useCallback and useMemo?",a:"useMemo: cache an expensive computed value. useCallback: cache a function reference (same as useMemo but for functions). Only use them when: (1) a computation is genuinely expensive, or (2) passing a callback/value as prop to a child wrapped in React.memo. Don't over-optimize — most components don't need them."},
+        ],
+        quiz:[
+          {q:"Which hook is used to run code after a component renders?",opts:["useState","useRef","useEffect","useContext"],answer:2},
+          {q:"What does an empty dependency array [] in useEffect mean?",opts:["Run on every render","Run never","Run once after mount","Run only when unmounting"],answer:2},
+          {q:"How do you share state between sibling components in React without a library?",opts:["Direct component communication","Lift state to the common parent","Use localStorage","Use a global variable"],answer:1},
+        ],
+        code:`// Custom useFetch hook
+function useFetch(url) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(url)
+      .then(r => r.json())
+      .then(d => { if (!cancelled) setData(d); })
+      .catch(e => { if (!cancelled) setError(e); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };  // cleanup
+  }, [url]);
+
+  return { data, loading, error };
+}
+
+// Component using the hook
+function UserList() {
+  const { data: users, loading, error } = useFetch('/api/users');
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error.message}</p>;
+  return <ul>{users.map(u => <li key={u.id}>{u.name}</li>)}</ul>;
+}`
+      },
+    ]
+  },
+  {
+    id:"phase7", label:"Phase 7: Node.js & APIs", icon:"🖥️",
+    desc:"Server-side JS, REST APIs, and authentication.",
+    topics:[
+      {
+        id:"nodejs", title:"Node.js & Express",
+        overview:"Node.js runs JavaScript on the server. It's event-driven and non-blocking, ideal for I/O-heavy applications like APIs. Express is the most popular Node.js web framework — minimal, fast, and flexible.",
+        keyConcepts:["Node.js Event Loop & Non-blocking I/O","npm & package.json","Express routing & middleware pipeline","REST API design principles","Authentication: JWT & Sessions","Environment variables (dotenv)","Error handling middleware","File system (fs module)"],
+        bestPractices:[
+          {icon:"🔒",title:"Validate all input",desc:"Use a validation library (Joi, Zod, express-validator) on every request body, query param, and route param before processing."},
+          {icon:"🚫",title:"Never expose stack traces",desc:"In production, return generic error messages to clients. Log detailed errors server-side only — stack traces reveal your codebase structure."},
+          {icon:"⚙️",title:"Use environment variables",desc:"Never hardcode secrets or API keys. Use .env locally (dotenv) and proper secrets management (AWS Secrets Manager, Vault) in production."},
+        ],
+        projects:[
+          {title:"Blog REST API",diff:"intermediate",desc:"Full CRUD REST API for blog posts: user auth with JWT, comments, likes, pagination, and input validation.",techs:["Node.js","Express","MongoDB","JWT"]},
+          {title:"File Upload Service",diff:"intermediate",desc:"API that accepts file uploads, validates type/size, processes images (resize/compress), stores on S3 or locally.",techs:["Node.js","Multer","Sharp","Express"]},
+          {title:"Real-time Chat (WebSocket)",diff:"advanced",desc:"Build a WebSocket chat server with rooms, user presence, message history, and rate limiting.",techs:["Node.js","Socket.io","Redis"]},
+        ],
+        qa:[
+          {q:"What is middleware in Express?",a:"Middleware is a function with access to (req, res, next). It runs in the pipeline between receiving a request and sending a response. Used for: logging, auth, input validation, CORS, rate limiting, error handling. Call next() to proceed to the next middleware, next(err) to skip to error handlers. Order matters — registered top to bottom."},
+          {q:"How does JWT authentication work?",a:"1. User logs in. 2. Server verifies credentials and creates a JWT (header.payload.signature — signed with a secret). 3. Client stores JWT (httpOnly cookie is safer than localStorage). 4. Client sends JWT in Authorization: Bearer <token> header. 5. Server verifies signature and extracts claims from payload. 6. JWTs are stateless — no server-side session storage needed."},
+          {q:"What is CORS and why configure it?",a:"CORS (Cross-Origin Resource Sharing) is a browser security feature blocking requests to a different origin. Configure it on your server to allow: specific origins, HTTP methods, and headers. Without proper CORS, your frontend at app.com can't call api.app.com. Use the 'cors' npm package in Express — never wildcard (*) in production for credentialed requests."},
+          {q:"How do you handle errors in Express?",a:"Express has a special 4-parameter error middleware: (err, req, res, next). Define it last, after all routes. Throw errors or call next(err) from route handlers. In production: log the full error server-side, return a generic message to the client. Distinguish operational errors (expected — 404, 422) from programmer errors (bugs — 500)."},
+        ],
+        quiz:[
+          {q:"How many parameters does an Express error handler middleware take?",opts:["2","3","4","5"],answer:2},
+          {q:"Which npm package reads .env files into process.env?",opts:["env-config","dotenv","process-env","envfile"],answer:1},
+          {q:"What HTTP status code should a POST that creates a resource return?",opts:["200","201","204","301"],answer:1},
+        ],
+        code:`import express from 'express';
+const app = express();
+app.use(express.json());
+
+// Middleware — logs every request
+app.use((req, res, next) => {
+  console.log(\`\${req.method} \${req.path}\`);
+  next();
+});
+
+// Protected route
+app.post('/api/posts', authenticate, validate(postSchema),
+  async (req, res, next) => {
+    try {
+      const post = await Post.create({ ...req.body, author: req.user.id });
+      res.status(201).json({ data: post });
+    } catch (err) {
+      next(err);  // pass to error handler
+    }
+  }
+);
+
+// Centralized error handler — must be LAST
+app.use((err, req, res, next) => {
+  console.error(err);
+  const status = err.status || 500;
+  const msg = status < 500 ? err.message : 'Internal server error';
+  res.status(status).json({ error: msg });
+});
+
+app.listen(3000);`
+      },
+      {
+        id:"rest-api", title:"REST API Design",
+        overview:"REST (Representational State Transfer) is an architectural style for networked applications. Good API design means consistency, predictability, and ease of use for consumers — it's a contract.",
+        keyConcepts:["HTTP Methods (GET/POST/PUT/PATCH/DELETE)","HTTP Status Codes","Resource naming conventions","Request/Response body design","Pagination & filtering","API versioning strategies","Rate limiting","OpenAPI/Swagger documentation","Authentication vs Authorization"],
+        bestPractices:[
+          {icon:"📖",title:"Use nouns, not verbs in URLs",desc:"Resources should be nouns: /users, /posts/:id. Not /getUsers or /createPost — the HTTP method conveys the action."},
+          {icon:"✅",title:"Return correct status codes",desc:"201 for resource creation, 204 for successful deletion (no body), 422 for validation errors, 409 for conflicts. Don't always return 200."},
+          {icon:"📄",title:"Document your API",desc:"Use OpenAPI/Swagger spec. API consumers shouldn't need to read your source code to understand your endpoints."},
+        ],
+        projects:[
+          {title:"Social Media REST API",diff:"intermediate",desc:"REST API for a social platform: users, posts, follows, likes, feed, notifications with proper status codes and pagination.",techs:["Node.js","Express","PostgreSQL","Swagger"]},
+          {title:"Auth Service",diff:"advanced",desc:"Complete auth: signup/login, JWT + refresh tokens, OAuth (Google/GitHub), 2FA with TOTP, and rate limiting.",techs:["Node.js","Passport.js","Redis","bcrypt"]},
+        ],
+        qa:[
+          {q:"What makes an API RESTful?",a:"REST constraints: 1. Statelessness (no client context stored on server). 2. Client-Server separation. 3. Cacheability. 4. Uniform interface (nouns, standard methods). 5. Layered system. 6. Code on demand (optional). Most real-world 'REST' APIs are REST-like HTTP APIs — they don't fully implement HATEOAS."},
+          {q:"What is the difference between PUT and PATCH?",a:"PUT replaces the entire resource — you must send the full representation. If you omit a field, it gets removed/nulled. PATCH applies a partial update — you only send the fields you want to change. In practice: use PATCH for most updates (more efficient), PUT when the client owns the full resource definition."},
+          {q:"How do refresh tokens work with JWT?",a:"Access tokens are short-lived (15-60 min) for API access. Refresh tokens are long-lived (7-30 days) stored in httpOnly cookies. When the access token expires: client sends refresh token to /auth/refresh, server validates it, issues a new access token (and optionally rotates the refresh token). Refresh tokens can be revoked — stored in a DB blacklist."},
+          {q:"What is rate limiting and how do you implement it?",a:"Rate limiting restricts requests per client per time window to prevent abuse. Strategies: Fixed window, Sliding window, Token bucket. Implementation: Redis to store request counts per IP/user key. Return 429 Too Many Requests with Retry-After header. Use express-rate-limit in Node.js. Apply stricter limits to auth endpoints (prevent brute force)."},
+        ],
+        quiz:[
+          {q:"Which HTTP method is idempotent and used for full resource replacement?",opts:["POST","PATCH","PUT","DELETE"],answer:2},
+          {q:"What status code means the client is not authenticated?",opts:["400","403","401","404"],answer:2},
+          {q:"Where should API versioning appear?",opts:["In the request body","In a custom header or URL path (/api/v1/)","In cookies","In query params only"],answer:1},
+        ],
+        code:`// REST API best practices
+
+// GET with pagination
+router.get('/posts', async (req, res) => {
+  const { page = 1, limit = 20 } = req.query;
+  const posts = await Post.find()
+    .skip((page-1)*limit).limit(+limit).lean();
+  const total = await Post.countDocuments();
+  res.json({ data: posts, pagination: { page:+page, limit:+limit, total } });
+});
+
+// POST — 201 + Location header
+router.post('/posts', authenticate, validate(postSchema), async (req, res) => {
+  const post = await Post.create({ ...req.body, author: req.user.id });
+  res.status(201)
+     .location(\`/api/v1/posts/\${post.id}\`)
+     .json({ data: post });
+});
+
+// DELETE — 204 No Content
+router.delete('/posts/:id', authenticate, async (req, res) => {
+  await Post.findByIdAndDelete(req.params.id);
+  res.status(204).send();
+});`
+      },
+    ]
+  },
+  {
+    id:"phase8", label:"Phase 8: Databases", icon:"🗄️",
+    desc:"SQL, NoSQL, ORMs, and query optimization.",
+    topics:[
+      {
+        id:"databases", title:"SQL & NoSQL Databases",
+        overview:"Databases store your application's data. SQL databases (PostgreSQL, MySQL) use structured schemas and ACID transactions. NoSQL databases (MongoDB, Redis) offer flexibility and horizontal scalability. Know when to use each.",
+        keyConcepts:["SQL: SELECT, JOIN, GROUP BY, INDEX, TRANSACTION","PostgreSQL features","Database normalization (1NF-3NF)","MongoDB: documents, collections, aggregation pipeline","Redis: caching, pub/sub, session storage","ORMs: Prisma, Sequelize, Mongoose","Database migrations","Connection pooling","ACID vs BASE"],
+        bestPractices:[
+          {icon:"🔑",title:"Index your query columns",desc:"Add indexes on columns in WHERE, JOIN, and ORDER BY clauses. Without indexes, queries scan every row (full table scan)."},
+          {icon:"🔄",title:"Use database migrations",desc:"Never modify schema manually in production. Version-control all schema changes as migration files that are reversible."},
+          {icon:"🚫",title:"Prevent SQL injection",desc:"Always use parameterized queries or an ORM. Never string-interpolate user input into SQL queries."},
+        ],
+        projects:[
+          {title:"Relational Blog Schema",diff:"beginner",desc:"Design a normalized PostgreSQL schema for a blog (users, posts, tags, comments). Write complex JOINs and indexes.",techs:["PostgreSQL","SQL"]},
+          {title:"E-commerce Data Layer",diff:"intermediate",desc:"Full e-commerce schema: products, inventory, orders, users. Implement with Prisma ORM, migrations, and seeding.",techs:["Node.js","Prisma","PostgreSQL"]},
+          {title:"Redis Caching Layer",diff:"advanced",desc:"Add Redis caching to a REST API. Implement cache-aside pattern, TTL strategy, and cache invalidation on update.",techs:["Node.js","Redis","Express"]},
+        ],
+        qa:[
+          {q:"What is the difference between SQL and NoSQL databases?",a:"SQL: structured schema, tables/rows, ACID transactions, vertical scaling, powerful JOINs. Best for: financial data, user accounts, complex relationships. NoSQL: flexible schema, documents/key-value/graphs, eventual consistency, horizontal scaling. Best for: unstructured data, high-write throughput, caching. The choice depends on your data model and access patterns — not hype."},
+          {q:"What are database indexes and when should you add them?",a:"An index (usually a B-tree) speeds up reads at the cost of write performance and storage. Add indexes on: foreign keys, columns in WHERE/JOIN/ORDER BY, high-cardinality columns. Don't index: boolean columns, columns rarely queried, very small tables. Always run EXPLAIN ANALYZE (PostgreSQL) before and after to verify improvement."},
+          {q:"What is database normalization?",a:"Normalization reduces data redundancy and improves integrity. 1NF: atomic values, no repeating groups. 2NF: no partial dependencies (non-key columns depend on the whole primary key). 3NF: no transitive dependencies (non-key columns depend only on the key). In practice, aim for 3NF and denormalize strategically for read-heavy hot paths."},
+          {q:"What is the N+1 query problem?",a:"N+1 occurs when you fetch N records and then execute one extra query per record to get related data. Example: fetch 100 posts, then loop and query author for each = 101 queries. Fix with: SQL JOINs, Mongoose populate(), Prisma include, or DataLoader (GraphQL). Always log SQL queries during development to catch N+1 early."},
+        ],
+        quiz:[
+          {q:"Which SQL JOIN returns only rows that match in BOTH tables?",opts:["LEFT JOIN","RIGHT JOIN","INNER JOIN","FULL OUTER JOIN"],answer:2},
+          {q:"What ACID property guarantees all-or-nothing operations?",opts:["Atomicity","Consistency","Isolation","Durability"],answer:0},
+          {q:"Which tool creates type-safe database queries and handles migrations in Node.js?",opts:["Mongoose","Sequelize","Prisma","Knex"],answer:2},
+        ],
+        code:`-- PostgreSQL: Efficient JOIN + INDEX
+SELECT u.name, COUNT(p.id) AS post_count
+FROM users u
+LEFT JOIN posts p ON p.user_id = u.id
+WHERE u.created_at > '2024-01-01'
+GROUP BY u.id
+ORDER BY post_count DESC
+LIMIT 10;
+
+CREATE INDEX idx_posts_user_id ON posts(user_id);
+
+-- Transaction for data integrity
+BEGIN;
+  UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+  UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+COMMIT;
+
+// Prisma ORM
+const users = await prisma.user.findMany({
+  where: { createdAt: { gte: new Date('2024-01-01') } },
+  include: { posts: { select: { id: true, title: true } } },
+  orderBy: { posts: { _count: 'desc' } },
+  take: 10
+});`
+      },
+    ]
+  },
+  {
+    id:"phase9", label:"Phase 9: Security", icon:"🔐",
+    desc:"OWASP Top 10, auth security, and safe coding practices.",
+    topics:[
+      {
+        id:"security", title:"Web Security Essentials",
+        overview:"Security is not an afterthought — it must be built in from the start. The OWASP Top 10 lists the most critical web application vulnerabilities. As a fullstack developer, you're responsible for preventing them.",
+        keyConcepts:["OWASP Top 10","XSS (Cross-Site Scripting)","SQL Injection","CSRF (Cross-Site Request Forgery)","Insecure Direct Object References (IDOR)","Broken Authentication","Security Headers (HSTS, CSP, X-Frame-Options)","Password hashing (bcrypt/argon2)","Dependency vulnerability scanning"],
+        bestPractices:[
+          {icon:"🛡️",title:"Sanitize & escape all output",desc:"Escape HTML in all user-generated content rendered to the browser. Never use innerHTML with untrusted data — use textContent or a sanitization library."},
+          {icon:"🔑",title:"Hash passwords with bcrypt/argon2",desc:"Never store plain text or MD5/SHA1 passwords. Use bcrypt or argon2 with an appropriate cost factor (work factor). Salt is added automatically."},
+          {icon:"🌐",title:"Set security HTTP headers",desc:"Use Helmet.js in Express to set: Content-Security-Policy, X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security, and Referrer-Policy."},
+        ],
+        projects:[
+          {title:"Security Audit of Sample App",diff:"intermediate",desc:"Take a deliberately vulnerable app (DVWA or WebGoat) and identify/fix: XSS, SQL injection, CSRF, and IDOR vulnerabilities.",techs:["Node.js","Express","Security concepts"]},
+          {title:"Secure Auth System",diff:"advanced",desc:"Build auth with: bcrypt password hashing, JWT + httpOnly refresh tokens, CSRF tokens, rate limiting on login, and audit logging.",techs:["Node.js","bcrypt","Helmet.js","Redis"]},
+        ],
+        qa:[
+          {q:"What is XSS and how do you prevent it?",a:"XSS (Cross-Site Scripting) occurs when an attacker injects malicious scripts into a web page viewed by other users. Types: Stored XSS (saved in DB, served to all users), Reflected XSS (in URL params), DOM-based XSS (client-side JS). Prevention: escape HTML output, use textContent instead of innerHTML, set Content-Security-Policy header, use a sanitization library (DOMPurify) for rich text."},
+          {q:"What is SQL injection and how do you prevent it?",a:"SQL injection occurs when user input is embedded directly in a SQL query, allowing attackers to manipulate the query. Example: username = ' OR '1'='1. Prevention: ALWAYS use parameterized queries or prepared statements — never string-concatenate user input into SQL. ORMs parameterize automatically. Also: least-privilege DB users, input validation, WAF."},
+          {q:"What is CSRF and how do you prevent it?",a:"CSRF (Cross-Site Request Forgery) tricks an authenticated user's browser into making an unwanted request to your server. Since the browser sends cookies automatically, the request is authenticated. Prevention: CSRF tokens (synchronizer token pattern), SameSite=Strict/Lax cookie attribute, check Origin/Referer headers. Not needed for stateless JWT-in-header auth."},
+          {q:"How should passwords be stored?",a:"Never store plain text passwords. Never use MD5, SHA1, or SHA256 alone — they're too fast and vulnerable to brute force/rainbow tables. Use bcrypt or argon2: both are slow by design (configurable work factor), automatically salt each password, and resist GPU-based attacks. bcrypt is the safe minimum; argon2 (argon2id) is the current recommended standard."},
+        ],
+        quiz:[
+          {q:"Which attack injects malicious scripts into web pages viewed by other users?",opts:["SQL Injection","CSRF","XSS","IDOR"],answer:2},
+          {q:"Which hashing algorithm is recommended for storing passwords?",opts:["MD5","SHA-256","bcrypt/argon2","Base64"],answer:2},
+          {q:"What does the SameSite=Strict cookie attribute protect against?",opts:["XSS","CSRF","SQL Injection","Clickjacking"],answer:1},
+        ],
+        code:`// Helmet.js — security headers in Express
+import helmet from 'helmet';
+app.use(helmet());  // sets 11 security headers automatically
+
+// bcrypt — secure password hashing
+import bcrypt from 'bcrypt';
+const ROUNDS = 12;  // cost factor — higher = slower (more secure)
+
+async function hashPassword(plain) {
+  return bcrypt.hash(plain, ROUNDS);  // auto-salted
+}
+async function verifyPassword(plain, hashed) {
+  return bcrypt.compare(plain, hashed);
+}
+
+// Parameterized query — prevents SQL injection
+// ❌ NEVER DO THIS:
+const bad = \`SELECT * FROM users WHERE email = '\${req.body.email}'\`;
+
+// ✅ Always do this:
+const user = await db.query(
+  'SELECT * FROM users WHERE email = $1',
+  [req.body.email]   // parameterized — cannot break out of the value
+);
+
+// Escape HTML — prevents XSS
+import { escape } from 'html-escaper';
+const safeTitle = escape(userInput);   // < > " ' & all escaped`
+      },
+    ]
+  },
+  {
+    id:"phase10", label:"Phase 10: DevOps & Testing", icon:"🚀",
+    desc:"Docker, CI/CD pipelines, and testing strategies.",
+    topics:[
+      {
+        id:"docker", title:"Docker & CI/CD",
+        overview:"Docker packages your app with all its dependencies into a container, ensuring it runs identically everywhere. CI/CD pipelines automate testing and deployment so every code change is validated and deployed safely.",
+        keyConcepts:["Images & Containers","Dockerfile & .dockerignore","Docker Compose (multi-service local dev)","Multi-stage builds","Container registries (Docker Hub, ECR)","GitHub Actions CI/CD","Environment variables in containers","Deployment targets (Render, Railway, AWS ECS, Vercel)"],
+        bestPractices:[
+          {icon:"🏗️",title:"Multi-stage builds",desc:"Separate build-time dependencies from runtime. Copy only the compiled output to the final production image — keeps images small and secure."},
+          {icon:"👤",title:"Run as non-root user",desc:"Never run containers as root in production. Create a dedicated user in your Dockerfile."},
+          {icon:"📦",title:"Pin image versions",desc:"Use node:20-alpine, not node:latest. Unpinned images can break when the base updates unexpectedly."},
+        ],
+        projects:[
+          {title:"Dockerize a Node.js API",diff:"beginner",desc:"Containerize an Express API with a multi-stage Dockerfile, Docker Compose with PostgreSQL + Redis, and a .dockerignore.",techs:["Docker","Node.js","Docker Compose"]},
+          {title:"GitHub Actions Pipeline",diff:"intermediate",desc:"Set up GitHub Actions: run lint and tests on every PR, build Docker image and push to registry on merge to main, deploy to Render/Railway.",techs:["GitHub Actions","Docker","YAML"]},
+        ],
+        qa:[
+          {q:"What is the difference between a Docker image and a container?",a:"An image is a read-only blueprint built from a Dockerfile (like a class). A container is a running instance of that image (like an object). You build images, push them to a registry, and run them as containers. Multiple containers can run from the same image simultaneously."},
+          {q:"What is Docker Compose and when would you use it?",a:"Docker Compose defines multi-container apps in a YAML file: your app, database, Redis, nginx — all their configs, volumes, and networks in one file. docker compose up starts everything. Perfect for local development. For production at scale use Kubernetes or managed cloud services."},
+          {q:"What should go in .dockerignore?",a:"node_modules/ (rebuilt inside container), .git/, .env files (inject as env vars at runtime — never bake secrets into images), test files, coverage reports, documentation, local build artifacts. Anything that shouldn't be in the image. Similar to .gitignore."},
+          {q:"Explain the basics of a CI/CD pipeline.",a:"CI (Continuous Integration): automatically lint, test, and build on every push/PR. CD (Continuous Deployment): automatically deploy to staging/production when CI passes. Typical pipeline: checkout → install deps → lint → test → build image → push to registry → deploy. Benefits: fast feedback on bugs, consistent deployments, reduced manual errors."},
+        ],
+        quiz:[
+          {q:"What does the COPY instruction do in a Dockerfile?",opts:["Copies files from the internet","Copies files from host into the image","Copies between containers","Copies environment variables"],answer:1},
+          {q:"What is the purpose of multi-stage Docker builds?",opts:["To run multiple services","To separate build tools from the final small runtime image","To build multiple images at once","To cache dependencies"],answer:1},
+          {q:"In GitHub Actions, what is a 'job'?",opts:["A single shell command","A collection of steps that run on the same runner","A trigger event","A deployment target"],answer:1},
+        ],
+        code:`# Dockerfile — multi-stage build
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine AS production
+RUN addgroup -S app && adduser -S app -G app  # non-root
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --production
+COPY --from=builder /app/dist ./dist
+USER app
+EXPOSE 3000
+CMD ["node", "dist/server.js"]
+
+# GitHub Actions — .github/workflows/ci.yml
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test`
+      },
+      {
+        id:"testing", title:"Testing Strategies",
+        overview:"Testing gives you confidence to ship and refactor without breaking things. The Testing Trophy: write mostly integration tests, backed by unit tests for complex logic, and a few E2E tests for critical user flows.",
+        keyConcepts:["Unit Testing (Jest, Vitest)","Integration Testing (Supertest)","E2E Testing (Playwright, Cypress)","Test-Driven Development (TDD)","Mocking & Stubbing","React Testing Library","Code coverage","Arrange-Act-Assert pattern","Test pyramid vs trophy"],
+        bestPractices:[
+          {icon:"🎯",title:"Test behavior, not implementation",desc:"Tests should verify what the code does, not how. Implementation-based tests break when you refactor, even if behavior is unchanged."},
+          {icon:"🏗️",title:"Arrange-Act-Assert",desc:"Structure every test: Arrange (set up the scenario), Act (run the code), Assert (verify the outcome). Keeps tests clear and focused."},
+          {icon:"🔄",title:"Run tests in CI",desc:"Tests only provide value when enforced. Failing tests must block merges to main. Run the full suite on every PR."},
+        ],
+        projects:[
+          {title:"Unit & Integration Test Suite",diff:"intermediate",desc:"Add tests to a REST API: unit tests for business logic, integration tests for endpoints with Supertest and a real test DB.",techs:["Jest","Supertest","Node.js"]},
+          {title:"Playwright E2E Tests",diff:"advanced",desc:"Write end-to-end tests for a React app's critical paths: sign up, log in, create content, and delete account.",techs:["Playwright","React","TypeScript"]},
+        ],
+        qa:[
+          {q:"What is the difference between unit and integration tests?",a:"Unit tests: test a single function/module in isolation. Fast, cheap, easy to debug. Mock all dependencies. Integration tests: test multiple parts working together (route → middleware → controller → database). Slower but more realistic — they catch issues that unit tests miss. The Testing Trophy suggests integration tests should be the bulk of your test suite."},
+          {q:"What should you NOT test?",a:"Don't test: third-party library internals, implementation details (private state, method names), trivial getters, configuration files, framework behavior. Focus on: business logic, error handling, data transformations, conditional behavior, anything a user or caller depends on. Tests that break on every refactor hurt more than they help."},
+          {q:"What is Test-Driven Development (TDD)?",a:"TDD: 1. Write a failing test for the behavior you want (Red). 2. Write the minimum code to make it pass (Green). 3. Refactor while keeping tests green (Refactor). Benefits: forces good design (code that's hard to test is usually hard to use), living documentation, confidence to refactor. Most valuable for complex business logic."},
+          {q:"How do you test async code in Jest?",a:"Three ways: 1. Return the promise: return expect(fn()).resolves.toBe(...) 2. async/await: const result = await fn(); expect(result).toBe(...) 3. done callback (legacy, avoid). For rejections: await expect(fn()).rejects.toThrow('message'). Always mock external HTTP calls and databases to keep tests fast and deterministic."},
+        ],
+        quiz:[
+          {q:"Which testing library is recommended for testing React components by simulating user behavior?",opts:["Enzyme","React Testing Library","Jest DOM","Sinon"],answer:1},
+          {q:"What is the 'Arrange-Act-Assert' pattern?",opts:["A git workflow","A test structure: setup → run → verify","A deployment strategy","A React pattern"],answer:1},
+          {q:"Which tool runs full browser-based end-to-end tests with auto-waiting?",opts:["Jest","Supertest","Playwright","Sinon"],answer:2},
+        ],
+        code:`// Jest unit test
+describe('formatCurrency', () => {
+  it('formats USD correctly', () => {
+    expect(formatCurrency(1234.5, 'USD')).toBe('$1,234.50');
+  });
+  it('throws for negative amount', () => {
+    expect(() => formatCurrency(-1)).toThrow('Amount cannot be negative');
+  });
+});
+
+// Integration test (Supertest)
+it('POST /posts returns 201', async () => {
+  const res = await request(app)
+    .post('/api/posts')
+    .set('Authorization', \`Bearer \${token}\`)
+    .send({ title: 'Test', content: 'Body' });
+  expect(res.status).toBe(201);
+  expect(res.body.data.title).toBe('Test');
+});
+
+// React Testing Library
+it('shows error on empty submit', async () => {
+  render(<LoginForm />);
+  await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+  expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+});`
+      },
+      {
+        id:"system-design", title:"System Design Fundamentals",
+        overview:"System design tests your ability to architect scalable distributed systems. Even as a junior developer, understanding these concepts demonstrates engineering maturity and prepares you for senior-level interviews.",
+        keyConcepts:["Horizontal vs Vertical Scaling","Load Balancers","Caching (CDN, Redis, application-level)","Database sharding & replication","Message Queues (Kafka, SQS, RabbitMQ)","Microservices vs Monolith","CAP Theorem","API Gateway","Rate Limiting at scale","Content Delivery Networks"],
+        bestPractices:[
+          {icon:"📊",title:"Start with requirements",desc:"Before designing: clarify scale (users, RPS, data size), read/write ratio, latency requirements, and availability SLA. Design to requirements, not to impress."},
+          {icon:"🔄",title:"Design for failure",desc:"Assume every component will fail. Add redundancy, retries with exponential backoff, circuit breakers, and graceful degradation."},
+          {icon:"📏",title:"Measure before optimizing",desc:"Don't pre-optimize. Add observability (metrics, logs, traces) first. Only optimize what you can measure as a real bottleneck."},
+        ],
+        projects:[
+          {title:"URL Shortener Service",diff:"intermediate",desc:"Build a bit.ly clone: short URL generation (base62), redirect, click analytics, rate limiting, and Redis caching.",techs:["Node.js","Redis","PostgreSQL","Docker"]},
+          {title:"Scalable Chat App",diff:"advanced",desc:"Real-time chat with Socket.io, horizontal scaling via Redis pub/sub, message history in PostgreSQL, and user presence.",techs:["Node.js","Socket.io","Redis","PostgreSQL"]},
+        ],
+        qa:[
+          {q:"How would you design a URL shortener?",a:"API: POST /shorten → return short code, GET /{code} → 301 redirect. Code generation: base62 encode of auto-increment ID (or hash with collision handling). Storage: SQL (id, short_code, long_url, user_id, clicks, expires_at). Caching: Redis (short_code → long_url, TTL). Scale: read-heavy, so add read replicas + CDN for redirects. Analytics: async click counting via a message queue."},
+          {q:"What is the CAP theorem?",a:"A distributed system can guarantee only 2 of 3: Consistency (all nodes return the same data), Availability (every request gets a response), Partition tolerance (works despite network failures). Since partitions are inevitable, the real choice is CP (consistent but may be unavailable during partition — PostgreSQL, ZooKeeper) vs AP (available but may return stale data — Cassandra, DynamoDB)."},
+          {q:"When would you use a message queue?",a:"Use message queues (Kafka, SQS, RabbitMQ) when: processing is slow and should be async (email, push notifications), you need to buffer burst traffic, multiple services need to react to the same event, you need guaranteed delivery and retry, or you need event replay. Don't use for: synchronous request/response flows or when you need immediate feedback."},
+          {q:"What is horizontal vs vertical scaling?",a:"Vertical (scale up): add more CPU/RAM to one server. Simple but expensive, limited, and has a single point of failure. Horizontal (scale out): add more servers and distribute load with a load balancer. Requires stateless apps, distributed sessions, and more infrastructure — but virtually unlimited scale. Design cloud-native apps for horizontal scaling from day one."},
+        ],
+        quiz:[
+          {q:"Which scaling approach adds more servers instead of upgrading existing ones?",opts:["Vertical scaling","Horizontal scaling","Database sharding","CDN scaling"],answer:1},
+          {q:"What does a load balancer do?",opts:["Stores session data","Distributes incoming traffic across multiple servers","Caches database queries","Minifies JavaScript"],answer:1},
+          {q:"Which consistency model may return stale data to ensure availability?",opts:["Strong consistency","ACID","Eventual consistency","Linearizability"],answer:2},
+        ],
+        code:`// Cache-aside pattern
+async function getUser(id) {
+  const key = \`user:\${id}\`;
+  const cached = await redis.get(key);
+  if (cached) return JSON.parse(cached);     // cache hit
+
+  const user = await db.users.findById(id);  // cache miss
+  await redis.setex(key, 300, JSON.stringify(user)); // 5 min TTL
+  return user;
+}
+
+// Invalidate on update
+async function updateUser(id, data) {
+  const user = await db.users.update(id, data);
+  await redis.del(\`user:\${id}\`);            // bust cache
+  return user;
+}
+
+// Message queue producer (AWS SQS / BullMQ style)
+async function sendWelcomeEmail(userId) {
+  await emailQueue.add('welcome', { userId }, {
+    attempts: 3,                 // retry up to 3 times
+    backoff: { type: 'exponential', delay: 2000 }
+  });
+  // Returns immediately — email sent async by worker
+}`
+      },
+    ]
+  }
+];
+
+// ===================== STATE =====================
+let completedTopics = new Set(JSON.parse(localStorage.getItem('fsp-done') || '[]'));
+let notes = JSON.parse(localStorage.getItem('fsp-notes') || '{}');
+let currentTopicId = null;
+let allTopics = [];
+let sidebarCollapsed = false;
+
+ROADMAP.forEach(phase => phase.topics.forEach(t => allTopics.push({...t, phaseId:phase.id, phaseLabel:phase.label})));
+
+// ===================== SIDEBAR =====================
+function buildSidebar(filterText='') {
+  const list = document.getElementById('phase-list');
+  const q = filterText.toLowerCase().trim();
+
+  if (q) {
+    // search mode
+    list.innerHTML = '';
+    const matches = allTopics.filter(t => t.title.toLowerCase().includes(q));
+    if (!matches.length) { list.innerHTML = '<div style="padding:12px 16px;font-size:.78rem;color:var(--text-muted)">No results</div>'; return; }
+    matches.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'search-result-item';
+      btn.innerHTML = `${t.title}<span>${t.phaseLabel}</span>`;
+      btn.onclick = () => { loadTopic(t.id); document.getElementById('search-input').value=''; buildSidebar(); };
+      list.appendChild(btn);
+    });
+    return;
+  }
+
+  list.innerHTML = '';
+  ROADMAP.forEach((phase, pi) => {
+    const group = document.createElement('div');
+    group.className = 'phase-group';
+    const btn = document.createElement('button');
+    const pDone = phase.topics.filter(t => completedTopics.has(t.id)).length;
+    const isOpen = pi === 0 || phase.topics.some(t => t.id === currentTopicId);
+    btn.className = 'phase-btn' + (isOpen ? ' open' : '');
+    btn.innerHTML = `${phase.icon} ${phase.label} <span style="font-size:.65rem;color:var(--green);font-weight:400;margin-right:auto;margin-left:6px">${pDone>0?pDone+'/'+phase.topics.length:''}</span><span class="chevron">›</span>`;
+    const tl = document.createElement('div');
+    tl.className = 'topic-list' + (isOpen ? ' open' : '');
+    btn.onclick = () => { btn.classList.toggle('open'); tl.classList.toggle('open'); };
+    phase.topics.forEach(topic => {
+      const isDone = completedTopics.has(topic.id);
+      const tb = document.createElement('button');
+      tb.className = 'topic-btn' + (isDone ? ' done' : '') + (topic.id === currentTopicId ? ' active' : '');
+      tb.id = 'tb-' + topic.id;
+      tb.innerHTML = `<span class="check ${isDone?'filled':''}">✓</span>${topic.title}`;
+      tb.onclick = () => loadTopic(topic.id);
+      tl.appendChild(tb);
+    });
+    group.appendChild(btn); group.appendChild(tl); list.appendChild(group);
+  });
+}
+
+function handleSearch(val) { buildSidebar(val); }
+
+function toggleSidebar() {
+  sidebarCollapsed = !sidebarCollapsed;
+  document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed);
+}
+
+// ===================== PROGRESS =====================
+function updateProgress() {
+  const total = allTopics.length;
+  const done = allTopics.filter(t => completedTopics.has(t.id)).length;
+  const pct = Math.round((done/total)*100);
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-text').textContent = done+'/'+total;
+}
+
+// ===================== HOME =====================
+function loadHome() {
+  currentTopicId = null;
+  document.getElementById('topic-title').textContent = 'FullStack Learning Path';
+  document.getElementById('topic-tag').textContent = 'Overview';
+  document.getElementById('mark-btn').style.display = 'none';
+  document.getElementById('prev-btn').disabled = true;
+  document.getElementById('next-btn').disabled = true;
+  document.getElementById('home-view').style.display = 'block';
+  document.getElementById('topic-view').style.display = 'none';
+  buildSidebar();
+  renderHome();
+}
+
+function renderHome() {
+  const hv = document.getElementById('home-view');
+  const total = allTopics.length;
+  const done = allTopics.filter(t => completedTopics.has(t.id)).length;
+  const projects = ROADMAP.reduce((a,p)=>a+p.topics.reduce((b,t)=>b+(t.projects?.length||0),0),0);
+  const qas = ROADMAP.reduce((a,p)=>a+p.topics.reduce((b,t)=>b+(t.qa?.length||0),0),0);
+
+  hv.innerHTML = `
+    <div class="hero">
+      <h2>Master Fullstack Development</h2>
+      <p>A hands-on roadmap following <strong>roadmap.sh/full-stack</strong>. Track your progress, build real projects, learn best practices, and prepare for technical interviews.</p>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Topics</div></div>
+      <div class="stat-card"><div class="stat-num">${projects}</div><div class="stat-label">Projects</div></div>
+      <div class="stat-card"><div class="stat-num">${qas}</div><div class="stat-label">Interview Q&As</div></div>
+      <div class="stat-card"><div class="stat-num">${done}</div><div class="stat-label">Completed</div></div>
+    </div>
+    <div class="phase-cards">
+      ${ROADMAP.map(phase => {
+        const pDone = phase.topics.filter(t=>completedTopics.has(t.id)).length;
+        const pPct = Math.round((pDone/phase.topics.length)*100);
+        return `<div class="phase-card" onclick="loadTopic('${phase.topics[0].id}')">
+          <div class="phase-card-icon">${phase.icon}</div>
+          <h3>${phase.label.replace(/Phase \d+: /,'')}</h3>
+          <p>${phase.desc}</p>
+          <div style="font-size:.68rem;color:var(--text-muted);margin-top:6px">${pDone}/${phase.topics.length} topics · ${pPct}%</div>
+          <div class="phase-progress"><div class="phase-progress-fill" style="width:${pPct}%"></div></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ===================== TOPIC =====================
+function loadTopic(topicId) {
+  const topic = allTopics.find(t=>t.id===topicId);
+  if (!topic) return;
+  currentTopicId = topicId;
+
+  document.getElementById('home-view').style.display = 'none';
+  document.getElementById('topic-view').style.display = 'block';
+  document.getElementById('topic-title').textContent = topic.title;
+  document.getElementById('topic-tag').textContent = topic.phaseLabel.replace(/Phase \d+: /,'');
+
+  const markBtn = document.getElementById('mark-btn');
+  markBtn.style.display = '';
+  if (completedTopics.has(topicId)) {
+    markBtn.textContent = '✓ Done'; markBtn.className = 'btn-mark done';
+  } else {
+    markBtn.textContent = 'Mark Complete'; markBtn.className = 'btn-mark';
+  }
+
+  const idx = allTopics.findIndex(t=>t.id===topicId);
+  document.getElementById('prev-btn').disabled = idx <= 0;
+  document.getElementById('next-btn').disabled = idx >= allTopics.length-1;
+
+  buildSidebar();
+  const activeBtn = document.getElementById('tb-'+topicId);
+  if (activeBtn) activeBtn.scrollIntoView({block:'nearest'});
+
+  renderTopic(topic);
+  document.getElementById('content').scrollTop = 0;
+}
+
+function renderTopic(topic) {
+  const savedNote = notes[topic.id] || '';
+  const tv = document.getElementById('topic-view');
+
+  tv.innerHTML = `
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'t-overview')">📖 Overview</button>
+      <button class="tab-btn" onclick="switchTab(this,'t-projects')">🛠️ Projects</button>
+      <button class="tab-btn" onclick="switchTab(this,'t-practices')">✅ Best Practices</button>
+      <button class="tab-btn" onclick="switchTab(this,'t-qa')">💬 Interview Q&A</button>
+      <button class="tab-btn" onclick="switchTab(this,'t-quiz')">🧠 Quiz</button>
+      <button class="tab-btn" onclick="switchTab(this,'t-notes')">📝 Notes</button>
+    </div>
+
+    <div id="t-overview" class="tab-panel active">
+      <div class="card">
+        <h3>Overview</h3>
+        <p>${topic.overview}</p>
+      </div>
+      <div class="card">
+        <h3>Key Concepts</h3>
+        <ul>${topic.keyConcepts.map(c=>`<li><code>${c.split(':')[0]}</code>${c.includes(':')?'&nbsp;—&nbsp;'+c.split(':').slice(1).join(':'):''}</li>`).join('')}</ul>
+      </div>
+      ${topic.code?`<div class="card"><h3>Code Example</h3><div class="code-block"><span class="code-lang">Code</span><pre>${escHtml(topic.code)}</pre></div></div>`:''}
+    </div>
+
+    <div id="t-projects" class="tab-panel">
+      <div class="card" style="background:rgba(108,99,255,.07);border-color:rgba(108,99,255,.25)">
+        <p>Build these projects to solidify your understanding and add to your portfolio. Start with beginner, work up to advanced.</p>
+      </div>
+      ${(topic.projects||[]).map(p=>`
+        <div class="project-card">
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:5px">
+            <h4>${p.title}</h4><span class="difficulty ${p.diff}">${p.diff}</span>
+          </div>
+          <p>${p.desc}</p>
+          <div class="tech-tags">${p.techs.map(t=>`<span class="tech-tag">${t}</span>`).join('')}</div>
+        </div>`).join('')}
+    </div>
+
+    <div id="t-practices" class="tab-panel">
+      <div class="card" style="background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.2)">
+        <p>These are real-world lessons distilled from professional experience. Apply them consistently — they separate good code from great code.</p>
+      </div>
+      ${(topic.bestPractices||[]).map(bp=>`
+        <div class="practice-item">
+          <div class="practice-icon">${bp.icon}</div>
+          <div class="practice-text"><h4>${bp.title}</h4><p>${bp.desc}</p></div>
+        </div>`).join('')}
+    </div>
+
+    <div id="t-qa" class="tab-panel">
+      <div class="card" style="background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.2)">
+        <p>Common interview questions for this topic. Click to reveal the answer. Practice saying them aloud — technical communication matters in interviews.</p>
+      </div>
+      ${(topic.qa||[]).map((qa,i)=>`
+        <div class="qa-item">
+          <div class="qa-q" onclick="toggleQa(this)">
+            <span>Q${i+1}: ${qa.q}</span><span class="arr">›</span>
+          </div>
+          <div class="qa-a"><p>${qa.a}</p></div>
+        </div>`).join('')}
+    </div>
+
+    <div id="t-quiz" class="tab-panel">
+      <div class="card" style="background:rgba(108,99,255,.07);border-color:rgba(108,99,255,.25)">
+        <p>Test your understanding. Select an answer for each question — the correct answer will be revealed immediately.</p>
+      </div>
+      <div id="quiz-body">${renderQuiz(topic)}</div>
+    </div>
+
+    <div id="t-notes" class="tab-panel">
+      <div class="card" style="background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.2)">
+        <p>Your personal notes for this topic. Saved automatically to your browser — available next time you open this page.</p>
+      </div>
+      <textarea id="notes-area" placeholder="Write your notes here...
+• Key things to remember
+• Concepts to revisit
+• Links to resources">${escHtml(savedNote)}</textarea>
+      <div id="notes-save-msg" style="opacity:0"></div>
+    </div>`;
+
+  // auto-save notes
+  document.getElementById('notes-area').addEventListener('input', e => {
+    notes[topic.id] = e.target.value;
+    localStorage.setItem('fsp-notes', JSON.stringify(notes));
+    const msg = document.getElementById('notes-save-msg');
+    msg.textContent = '✓ Saved'; msg.style.opacity = '1';
+    clearTimeout(msg._t);
+    msg._t = setTimeout(()=>{ msg.style.opacity='0'; }, 1500);
+  });
+}
+
+// ===================== QUIZ =====================
+function renderQuiz(topic) {
+  if (!topic.quiz || !topic.quiz.length) return '<div class="card"><p style="color:var(--text-muted)">No quiz available for this topic yet.</p></div>';
+  let score = 0; let answered = 0; const total = topic.quiz.length;
+
+  return topic.quiz.map((q,qi)=>`
+    <div class="quiz-q" id="qq-${qi}">
+      <p>Q${qi+1}: ${q.q}</p>
+      <div class="quiz-opts">
+        ${q.opts.map((opt,oi)=>`
+          <button class="quiz-opt" onclick="answerQuiz(${qi},${oi},${q.answer},'${topic.id}')">
+            ${String.fromCharCode(65+oi)}. ${opt}
+          </button>`).join('')}
+      </div>
+    </div>`).join('') + `<div id="quiz-score" style="display:none" class="quiz-result"><span>🎉</span><p id="quiz-score-txt"></p><br><button class="btn-retake" onclick="retakeQuiz('${topic.id}')">Retake Quiz</button></div>`;
+}
+
+let quizAnswers = {};
+function answerQuiz(qi, selected, correct, topicId) {
+  if (quizAnswers[topicId+'_'+qi] !== undefined) return; // already answered
+  quizAnswers[topicId+'_'+qi] = selected;
+
+  const qq = document.getElementById('qq-'+qi);
+  const opts = qq.querySelectorAll('.quiz-opt');
+  opts.forEach((btn,i) => {
+    btn.classList.add('locked');
+    if (i === correct) btn.classList.add('correct');
+    else if (i === selected && selected !== correct) btn.classList.add('wrong');
+  });
+
+  // check if all answered
+  const topic = allTopics.find(t=>t.id===topicId);
+  if (!topic?.quiz) return;
+  const allAnswered = topic.quiz.every((_,i)=>quizAnswers[topicId+'_'+i]!==undefined);
+  if (allAnswered) {
+    const sc = topic.quiz.filter((_,i)=>quizAnswers[topicId+'_'+i]===topic.quiz[i].answer).length;
+    const scoreEl = document.getElementById('quiz-score');
+    scoreEl.style.display = 'block';
+    document.getElementById('quiz-score-txt').textContent = `You scored ${sc} / ${topic.quiz.length}`;
+    scoreEl.querySelector('span').textContent = sc === topic.quiz.length ? '🏆' : sc >= topic.quiz.length/2 ? '👍' : '📚';
+  }
+}
+
+function retakeQuiz(topicId) {
+  const topic = allTopics.find(t=>t.id===topicId);
+  if (!topic) return;
+  topic.quiz.forEach((_,i)=>delete quizAnswers[topicId+'_'+i]);
+  document.getElementById('quiz-body').innerHTML = renderQuiz(topic);
+}
+
+// ===================== MARK COMPLETE =====================
+function markTopic() {
+  if (!currentTopicId) return;
+  if (completedTopics.has(currentTopicId)) {
+    completedTopics.delete(currentTopicId);
+  } else {
+    completedTopics.add(currentTopicId);
+  }
+  localStorage.setItem('fsp-done', JSON.stringify([...completedTopics]));
+  updateProgress();
+  loadTopic(currentTopicId);
+}
+
+// ===================== NAVIGATION =====================
+function navigateTopic(dir) {
+  const idx = allTopics.findIndex(t=>t.id===currentTopicId);
+  const next = allTopics[idx+dir];
+  if (next) loadTopic(next.id);
+}
+
+// ===================== HELPERS =====================
+function switchTab(btn, panelId) {
+  btn.closest('.tabs').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+}
+
+function toggleQa(el) {
+  el.classList.toggle('open');
+  const ans = el.nextElementSibling;
+  ans.style.display = ans.style.display==='block'?'none':'block';
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  if (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  if (e.key==='ArrowRight') navigateTopic(1);
+  if (e.key==='ArrowLeft') navigateTopic(-1);
+});
+
+// ===================== INIT =====================
+buildSidebar();
+updateProgress();
+loadHome();
+</script>
+</body>
+</html>
