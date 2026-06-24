@@ -6,18 +6,13 @@ on:
       - main
     paths:
       - 'fullstack-learning-app/**'
-      - 'infra/**'               # also re-deploy if infra changes
-  workflow_dispatch:             # allow manual trigger from GitHub UI
+      - 'infra/**'
+  workflow_dispatch:
 
 jobs:
-  # ── Job 1: Deploy or update CDK infrastructure ──────────────────────────────
-  infra:
-    name: Deploy CDK Infrastructure
+  infra-and-deploy:
+    name: Deploy CDK Infrastructure and App
     runs-on: ubuntu-latest
-
-    outputs:
-      bucket_name: ${{ steps.get_outputs.outputs.bucket_name }}
-      website_url: ${{ steps.get_outputs.outputs.website_url }}
 
     steps:
       - name: Checkout repository
@@ -41,7 +36,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: CDK Bootstrap (idempotent — safe to run every time)
+      - name: CDK Bootstrap
         working-directory: infra
         run: npx cdk bootstrap
 
@@ -49,64 +44,26 @@ jobs:
         working-directory: infra
         run: npx cdk deploy --require-approval never
 
-      - name: Read CloudFormation outputs
-        id: get_outputs
+      # Derive the bucket name the same way the CDK stack does:
+      # bucketName: `fullstack-learning-app-${account}-${region}`
+      # Using STS avoids any cross-job output passing issues.
+      - name: Resolve bucket name
         run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity \
+            --query Account --output text)
           REGION="${{ secrets.AWS_REGION }}"
+          BUCKET_NAME="fullstack-learning-app-${ACCOUNT_ID}-${REGION}"
 
-          BUCKET_NAME=$(aws cloudformation describe-stacks \
-            --stack-name FullstackLearningStack \
-            --region "$REGION" \
-            --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
-            --output text)
+          echo "BUCKET_NAME=${BUCKET_NAME}" >> "$GITHUB_ENV"
+          echo "✅ Bucket: ${BUCKET_NAME}"
 
-          # Fallback: construct the deterministic bucket name if CF lookup is empty
-          if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" = "None" ]; then
-            ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-            BUCKET_NAME="fullstack-learning-app-${ACCOUNT_ID}-${REGION}"
-            echo "⚠️ CloudFormation output empty — using derived bucket name: $BUCKET_NAME"
-          fi
-
-          WEBSITE_URL=$(aws cloudformation describe-stacks \
-            --stack-name FullstackLearningStack \
-            --region "$REGION" \
-            --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" \
-            --output text)
-
-          # Fail loudly if bucket name is still empty after the fallback
-          if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" = "None" ]; then
-            echo "❌ Could not determine bucket name. Check that the CDK stack deployed successfully."
-            exit 1
-          fi
-
-          echo "✅ Bucket: $BUCKET_NAME"
-          echo "bucket_name=$BUCKET_NAME" >> "$GITHUB_OUTPUT"
-          echo "website_url=$WEBSITE_URL"  >> "$GITHUB_OUTPUT"
-
-  # ── Job 2: Deploy app files to S3 ───────────────────────────────────────────
-  deploy:
-    name: Deploy App to S3
-    runs-on: ubuntu-latest
-    needs: infra                 # only runs after infra job succeeds
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Sync files to S3
+      - name: Sync app files to S3
         run: |
-          aws s3 sync fullstack-learning-app/ s3://${{ needs.infra.outputs.bucket_name }}/ \
+          aws s3 sync fullstack-learning-app/ "s3://${BUCKET_NAME}/" \
             --delete \
             --cache-control "no-cache, no-store, must-revalidate"
 
-      # Uncomment once you add a CloudFront distribution in the CDK stack
+      # Uncomment once you add a CloudFront distribution to the CDK stack
       # - name: Invalidate CloudFront cache
       #   run: |
       #     aws cloudfront create-invalidation \
@@ -115,4 +72,5 @@ jobs:
 
       - name: Print site URL
         run: |
-          echo "✅ Deployed to: ${{ needs.infra.outputs.website_url }}"
+          REGION="${{ secrets.AWS_REGION }}"
+          echo "✅ Live at: http://${BUCKET_NAME}.s3-website-${REGION}.amazonaws.com"
