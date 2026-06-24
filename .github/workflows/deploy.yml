@@ -6,13 +6,70 @@ on:
       - main
     paths:
       - 'fullstack-learning-app/**'
-
-  workflow_dispatch:
+      - 'infra/**'               # also re-deploy if infra changes
+  workflow_dispatch:             # allow manual trigger from GitHub UI
 
 jobs:
-  deploy:
-    name: Deploy to S3
+  # ── Job 1: Deploy or update CDK infrastructure ──────────────────────────────
+  infra:
+    name: Deploy CDK Infrastructure
     runs-on: ubuntu-latest
+
+    outputs:
+      bucket_name: ${{ steps.get_outputs.outputs.bucket_name }}
+      website_url: ${{ steps.get_outputs.outputs.website_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: infra/package-lock.json
+
+      - name: Install CDK dependencies
+        working-directory: infra
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: CDK Bootstrap (idempotent — safe to run every time)
+        working-directory: infra
+        run: npx cdk bootstrap
+
+      - name: CDK Deploy
+        working-directory: infra
+        run: npx cdk deploy --require-approval never
+
+      - name: Read CloudFormation outputs
+        id: get_outputs
+        run: |
+          BUCKET_NAME=$(aws cloudformation describe-stacks \
+            --stack-name FullstackLearningStack \
+            --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
+            --output text)
+
+          WEBSITE_URL=$(aws cloudformation describe-stacks \
+            --stack-name FullstackLearningStack \
+            --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" \
+            --output text)
+
+          echo "bucket_name=$BUCKET_NAME" >> "$GITHUB_OUTPUT"
+          echo "website_url=$WEBSITE_URL"  >> "$GITHUB_OUTPUT"
+
+  # ── Job 2: Deploy app files to S3 ───────────────────────────────────────────
+  deploy:
+    name: Deploy App to S3
+    runs-on: ubuntu-latest
+    needs: infra                 # only runs after infra job succeeds
 
     steps:
       - name: Checkout repository
@@ -27,17 +84,11 @@ jobs:
 
       - name: Sync files to S3
         run: |
-          aws s3 sync fullstack-learning-app/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
+          aws s3 sync fullstack-learning-app/ s3://${{ needs.infra.outputs.bucket_name }}/ \
             --delete \
             --cache-control "no-cache, no-store, must-revalidate"
 
-      - name: Set index.html as website home document
-        run: |
-          aws s3 website s3://${{ secrets.S3_BUCKET_NAME }}/ \
-            --index-document index.html \
-            --error-document index.html
-
-      # Uncomment if you have a CloudFront distribution in front of S3
+      # Uncomment once you add a CloudFront distribution in the CDK stack
       # - name: Invalidate CloudFront cache
       #   run: |
       #     aws cloudfront create-invalidation \
@@ -46,4 +97,4 @@ jobs:
 
       - name: Print site URL
         run: |
-          echo "Site URL: http://${{ secrets.S3_BUCKET_NAME }}.s3-website-${{ secrets.AWS_REGION }}.amazonaws.com"
+          echo "✅ Deployed to: ${{ needs.infra.outputs.website_url }}"
