@@ -40,26 +40,35 @@ jobs:
         working-directory: infra
         run: npx cdk bootstrap
 
+      # --outputs-file writes all CfnOutputs to a JSON file immediately
+      # after deploy. No extra API calls needed to find the bucket name.
       - name: CDK Deploy
         working-directory: infra
-        run: npx cdk deploy --require-approval never
-
-      # Derive the bucket name the same way the CDK stack does:
-      # bucketName: `fullstack-learning-app-${account}-${region}`
-      # Using STS avoids any cross-job output passing issues.
-      - name: Resolve bucket name
         run: |
-          ACCOUNT_ID=$(aws sts get-caller-identity \
-            --query Account --output text)
-          REGION="${{ secrets.AWS_REGION }}"
-          BUCKET_NAME="fullstack-learning-app-${ACCOUNT_ID}-${REGION}"
+          npx cdk deploy --require-approval never \
+            --outputs-file ../cdk-outputs.json
 
-          echo "BUCKET_NAME=${BUCKET_NAME}" >> "$GITHUB_ENV"
-          echo "✅ Bucket: ${BUCKET_NAME}"
+      - name: Read bucket name from CDK outputs
+        run: |
+          # cdk-outputs.json looks like:
+          # { "FullstackLearningStack": { "BucketName": "...", "WebsiteURL": "..." } }
+          BUCKET_NAME=$(jq -r '.FullstackLearningStack.BucketName' cdk-outputs.json)
+          WEBSITE_URL=$(jq -r '.FullstackLearningStack.WebsiteURL' cdk-outputs.json)
+
+          if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" = "null" ]; then
+            echo "❌ BucketName not found in cdk-outputs.json"
+            echo "Contents of cdk-outputs.json:"
+            cat cdk-outputs.json
+            exit 1
+          fi
+
+          echo "✅ Bucket name: $BUCKET_NAME"
+          echo "BUCKET_NAME=$BUCKET_NAME" >> "$GITHUB_ENV"
+          echo "WEBSITE_URL=$WEBSITE_URL"  >> "$GITHUB_ENV"
 
       - name: Sync app files to S3
         run: |
-          aws s3 sync fullstack-learning-app/ "s3://${BUCKET_NAME}/" \
+          aws s3 sync fullstack-learning-app/ "s3://$BUCKET_NAME/" \
             --delete \
             --cache-control "no-cache, no-store, must-revalidate"
 
@@ -71,6 +80,4 @@ jobs:
       #       --paths "/*"
 
       - name: Print site URL
-        run: |
-          REGION="${{ secrets.AWS_REGION }}"
-          echo "✅ Live at: http://${BUCKET_NAME}.s3-website-${REGION}.amazonaws.com"
+        run: echo "✅ Live at $WEBSITE_URL"
