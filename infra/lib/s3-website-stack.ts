@@ -13,7 +13,7 @@ export class S3WebsiteStack extends cdk.Stack {
     this.bucket = new s3.Bucket(this, 'WebsiteBucket', {
       // Bucket name is deterministic so the pipeline can reference it via
       // CloudFormation outputs (no need to hardcode in secrets).
-      bucketName: `fullstack_learning-app-${this.account}-${this.region}`,
+      bucketName: `fullstack-learning-app-${this.account}-${this.region}`,
 
       // Static website hosting
       websiteIndexDocument: 'index.html',
@@ -59,16 +59,16 @@ export class S3WebsiteStack extends cdk.Stack {
     );
 
     // --- Outputs used by the GitHub Actions pipeline ---
-    new cdk.CfnOutput(this, 'BucketName', {
+    new cdk.CfnOutput(this, 'FrontendBucketName', {
       value: this.bucket.bucketName,
       description: 'S3 bucket name — referenced in the CI/CD pipeline',
-      exportName: `${this.stackName}-BucketName`,
+      exportName: `${this.stackName}-FrontendBucketName`,
     });
 
-    new cdk.CfnOutput(this, 'WebsiteURL', {
+    new cdk.CfnOutput(this, 'FrontendWebsiteUrl', {
       value: this.bucket.bucketWebsiteUrl,
       description: 'Public S3 static website URL',
-      exportName: `${this.stackName}-WebsiteURL`,
+      exportName: `${this.stackName}-FrontendWebsiteUrl`,
     });
 
     new cdk.CfnOutput(this, 'BucketArn', {

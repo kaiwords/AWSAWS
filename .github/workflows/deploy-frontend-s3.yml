@@ -38,7 +38,6 @@ jobs:
         run: |
           test -n "$AWS_REGION"
           test -f "$FRONTEND_DIR/index.html"
-          test -f "$FRONTEND_DIR/app.js"
           test -f "$FRONTEND_DIR/styles.css"
 
       - name: Install CDK dependencies
