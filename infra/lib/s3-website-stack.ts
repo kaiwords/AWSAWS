@@ -13,7 +13,7 @@ export class S3WebsiteStack extends cdk.Stack {
     this.bucket = new s3.Bucket(this, 'WebsiteBucket', {
       // Bucket name is deterministic so the pipeline can reference it via
       // CloudFormation outputs (no need to hardcode in secrets).
-      bucketName: `fullstack-learning-app-${this.account}-${this.region}`,
+      bucketName: `fullstack_learning-app-${this.account}-${this.region}`,
 
       // Static website hosting
       websiteIndexDocument: 'index.html',
@@ -78,7 +78,7 @@ export class S3WebsiteStack extends cdk.Stack {
     });
 
     // Reminder tag
-    cdk.Tags.of(this).add('Project', 'fullstack-learning-app');
+    cdk.Tags.of(this).add('Project', 'fullstack_learning-app');
     cdk.Tags.of(this).add('ManagedBy', 'aws-cdk');
   }
 }

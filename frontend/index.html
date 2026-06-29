@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FullStack Learning Path</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav id="sidebar">
+  <div id="sidebar-header" onclick="loadHome()">
+    <h1>⚡ FullStack Path</h1>
+  </div>
+  <div id="progress-wrap">
+    <div id="progress-label"><span>Progress</span><span id="progress-text">0/0</span></div>
+    <div id="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
+  </div>
+  <div id="search-wrap">
+    <input id="search-input" type="text" placeholder="Search topics..." oninput="handleSearch(this.value)">
+  </div>
+  <div id="phase-list"></div>
+</nav>
+
+<div id="main">
+  <div id="topbar">
+    <button id="toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
+    <h2 id="topic-title">FullStack Learning Path</h2>
+    <span id="topic-tag" class="tag tag-phase">Overview</span>
+    <div class="nav-btns">
+      <button class="nav-btn" id="prev-btn" onclick="navigateTopic(-1)" disabled>← Prev</button>
+      <button class="nav-btn" id="next-btn" onclick="navigateTopic(1)" disabled>Next →</button>
+    </div>
+    <button id="mark-btn" class="btn-mark" onclick="markTopic()" style="display:none">Mark Complete</button>
+  </div>
+  <div id="content">
+    <div id="home-view"></div>
+    <div id="topic-view" style="display:none"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

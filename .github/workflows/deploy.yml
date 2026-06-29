@@ -1,83 +1,69 @@
-name: Deploy Frontend to S3
+name: Deploy frontend to S3
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'fullstack-learning-app/**'
-      - 'infra/**'
+      - "frontend/**"
+      - "infra/**"
+      - ".github/workflows/deploy-frontend-s3.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+env:
+  FRONTEND_DIR: frontend
+  INFRA_DIR: infra
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
 jobs:
-  infra-and-deploy:
-    name: Deploy CDK Infrastructure and App
+  deploy:
+    name: Provision infrastructure and deploy frontend
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: infra/package-lock.json
-
-      - name: Install CDK dependencies
-        working-directory: infra
-        run: npm ci
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: CDK Bootstrap
-        working-directory: infra
-        run: npx cdk bootstrap
-
-      # --outputs-file writes all CfnOutputs to a JSON file immediately
-      # after deploy. No extra API calls needed to find the bucket name.
-      - name: CDK Deploy
-        working-directory: infra
+      - name: Validate frontend files
         run: |
-          npx cdk deploy --require-approval never \
-            --outputs-file ../cdk-outputs.json
+          test -n "$AWS_REGION"
+          test -f "$FRONTEND_DIR/index.html"
+          test -f "$FRONTEND_DIR/app.js"
+          test -f "$FRONTEND_DIR/styles.css"
 
-      - name: Read bucket name from CDK outputs
+      - name: Install CDK dependencies
         run: |
-          # cdk-outputs.json looks like:
-          # { "FullstackLearningStack": { "BucketName": "...", "WebsiteURL": "..." } }
-          BUCKET_NAME=$(jq -r '.FullstackLearningStack.BucketName' cdk-outputs.json)
-          WEBSITE_URL=$(jq -r '.FullstackLearningStack.WebsiteURL' cdk-outputs.json)
+          npm ci
+        working-directory: ${{ env.INFRA_DIR }}
 
-          if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" = "null" ]; then
-            echo "❌ BucketName not found in cdk-outputs.json"
-            echo "Contents of cdk-outputs.json:"
-            cat cdk-outputs.json
-            exit 1
-          fi
-
-          echo "✅ Bucket name: $BUCKET_NAME"
-          echo "BUCKET_NAME=$BUCKET_NAME" >> "$GITHUB_ENV"
-          echo "WEBSITE_URL=$WEBSITE_URL"  >> "$GITHUB_ENV"
-
-      - name: Sync app files to S3
+      - name: Deploy S3 website infrastructure
         run: |
-          aws s3 sync fullstack-learning-app/ "s3://$BUCKET_NAME/" \
+          npx cdk deploy --require-approval never --outputs-file cdk-outputs.json
+        working-directory: ${{ env.INFRA_DIR }}
+
+      - name: Read infrastructure outputs
+        run: |
+          node -e "const fs = require('fs'); const outputs = JSON.parse(fs.readFileSync('cdk-outputs.json', 'utf8')); const stack = outputs.FullStackLearningFrontendStack; fs.appendFileSync(process.env.GITHUB_ENV, 'S3_BUCKET=' + stack.FrontendBucketName + '\nWEBSITE_URL=' + stack.FrontendWebsiteUrl + '\n');"
+        working-directory: ${{ env.INFRA_DIR }}
+
+      - name: Upload frontend assets
+        run: |
+          aws s3 sync "$FRONTEND_DIR" "s3://$S3_BUCKET" \
             --delete \
-            --cache-control "no-cache, no-store, must-revalidate"
+            --exclude ".DS_Store" \
+            --cache-control "public, max-age=300"
 
-      # Uncomment once you add a CloudFront distribution to the CDK stack
-      # - name: Invalidate CloudFront cache
-      #   run: |
-      #     aws cloudfront create-invalidation \
-      #       --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-      #       --paths "/*"
-
-      - name: Print site URL
-        run: echo "✅ Live at $WEBSITE_URL"
+      - name: Print website URL
+        run: |
+          echo "Frontend deployed to:"
+          echo "$WEBSITE_URL"
