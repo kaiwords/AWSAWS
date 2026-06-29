@@ -52,7 +52,7 @@ jobs:
 
       - name: Read infrastructure outputs
         run: |
-          node -e "const fs = require('fs'); const outputs = JSON.parse(fs.readFileSync('cdk-outputs.json', 'utf8')); const stack = outputs.FullStackLearningFrontendStack; fs.appendFileSync(process.env.GITHUB_ENV, 'S3_BUCKET=' + stack.FrontendBucketName + '\nWEBSITE_URL=' + stack.FrontendWebsiteUrl + '\n');"
+          node -e "const fs = require('fs'); const outputs = JSON.parse(fs.readFileSync('cdk-outputs.json', 'utf8')); const stack = outputs.FullstackLearningStack; fs.appendFileSync(process.env.GITHUB_ENV, 'S3_BUCKET=' + stack.FrontendBucketName + '\nWEBSITE_URL=' + stack.FrontendWebsiteUrl + '\n');"
         working-directory: ${{ env.INFRA_DIR }}
 
       - name: Upload frontend assets
